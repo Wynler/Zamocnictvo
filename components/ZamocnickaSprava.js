@@ -1557,7 +1557,7 @@ export default function ZamocnickaSprava() {
                       setShowImportStatus(true);
                       
                       try {
-                        const XLSX = await import('https://cdn.sheetjs.com/xlsx-latest/package/xlsx.mjs');
+                        const XLSX = await import('xlsx');
                         
                         const data = await file.arrayBuffer();
                         const workbook = XLSX.read(data, { type: 'array' });
