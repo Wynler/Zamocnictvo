@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, ChevronRight, Upload, X, ArrowLeft, Wrench, Edit, Pencil } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 export default function ZamocnickaSprava() {
   const [zakazky, setZakazky] = useState([]);
@@ -59,77 +60,56 @@ export default function ZamocnickaSprava() {
   const [editovanyDielec, setEditovanyDielec] = useState(null);
 
   useEffect(() => {
-    const ulozeneData = localStorage.getItem('zamocnicke-zakazky');
-    if (ulozeneData) {
-      setZakazky(JSON.parse(ulozeneData));
-    } else {
-      const demoZakazky = [
-        {
-          id: 1,
-          nazov: 'Zábradlie rodinný dom',
-          zakaznik: 'Ján Novák',
-          kontaktnaOsoba: 'Ján Novák',
-          telefon: '+421 900 123 456',
-          email: 'jan.novak@email.sk',
-          stav: 'aktivna',
-          etapy: [
-            {
-              id: 1,
-              nazov: 'Výroba konštrukcie',
-              stav: 'dokoncene',
-              datumUkoncenia: '2024-12-20',
-              zinkovanie: 'ziarove',
-              farba: 'praskova',
-              farbaTon: 'RAL 7016',
-              hmotnostPodlaVykazu: '156.5',
-              datumVyrobyOd: '2024-12-01',
-              datumVyrobyDo: '2024-12-10',
-              datumPovrchovejUpravyOd: '2024-12-11',
-              datumPovrchovejUpravyDo: '2024-12-15',
-              datumMontazeOd: '2024-12-16',
-              datumMontazeDo: '2024-12-20',
-              popis: 'Oceľová konštrukcia zábradlia s nerezovým madlom',
-              dielce: [
-                { id: 1, nazov: 'Profil 40x40x2', hmotnostJednehoKs: 4.7, mnozstvo: 10, jednotka: 'ks' },
-                { id: 2, nazov: 'Profil 60x40x3', hmotnostJednehoKs: 8.2, mnozstvo: 5, jednotka: 'ks' }
-              ],
-              polozky: [],
-              spojovaciMaterial: [],
-              tyc: [],
-              platne: [],
-              spotrebny: []
-            },
-            {
-              id: 2,
-              nazov: 'Brána posuvná',
-              stav: 'prebiehajuce',
-              datumUkoncenia: '2024-12-30',
-              zinkovanie: 'ziarove',
-              farba: 'nic',
-              hmotnostPodlaVykazu: '280.0',
-              datumVyrobyOd: '2024-12-10',
-              datumVyrobyDo: '2024-12-25',
-              popis: 'Posuvná brána s elektrickým pohonom',
-              dielce: [],
-              polozky: [],
-              spojovaciMaterial: [],
-              tyc: [],
-              platne: [],
-              spotrebny: []
-            }
-          ]
-        }
-      ];
-      setZakazky(demoZakazky);
-      localStorage.setItem('zamocnicke-zakazky', JSON.stringify(demoZakazky));
-    }
-  }, []);
+  nacitajZakazky();
+}, []);
 
-  useEffect(() => {
-    if (zakazky.length > 0) {
-      localStorage.setItem('zamocnicke-zakazky', JSON.stringify(zakazky));
-    }
-  }, [zakazky]);
+const nacitajZakazky = async () => {
+  try {
+    const { data: zakazkyData, error } = await supabase
+      .from('zakazky')
+      .select(`
+        *,
+        etapy (
+          *,
+          dielce (*)
+        )
+      `)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    
+    const formattedData = (zakazkyData || []).map(z => ({
+      ...z,
+      etapy: (z.etapy || []).map(e => ({
+        ...e,
+        datumUkoncenia: e.datum_ukoncenia,
+        datumVyrobyOd: e.datum_vyroby_od,
+        datumVyrobyDo: e.datum_vyroby_do,
+        datumPovrchovejUpravyOd: e.datum_povrchovej_upravy_od,
+        datumPovrchovejUpravyDo: e.datum_povrchovej_upravy_do,
+        datumMontazeOd: e.datum_montaze_od,
+        datumMontazeDo: e.datum_montaze_do,
+        hmotnostPodlaVykazu: e.hmotnost_podla_vykazu,
+        farbaTon: e.farba_ton,
+        dielce: (e.dielce || []).map(d => ({
+          ...d,
+          hmotnostJednehoKs: d.hmotnost_jedneho_ks
+        })),
+        polozky: [],
+        spojovaciMaterial: [],
+        tyc: [],
+        platne: [],
+        spotrebny: []
+      }))
+    }));
+    
+    setZakazky(formattedData);
+  } catch (error) {
+    console.error('Chyba:', error);
+  }
+};[]);
+
+
 
   const stavyZakaziek = {
     'priprava': { label: 'Príprava', farba: 'bg-yellow-100 text-yellow-700' },
