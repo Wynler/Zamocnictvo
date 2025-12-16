@@ -1,6 +1,8 @@
+'use client'
 
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, ChevronRight, Upload, X, ArrowLeft, Wrench, Edit, Pencil } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 export default function ZamocnickaSprava() {
   const [zakazky, setZakazky] = useState([]);
@@ -8,6 +10,7 @@ export default function ZamocnickaSprava() {
   const [aktualnaZakazka, setAktualnaZakazka] = useState(null);
   const [aktualnaEtapa, setAktualnaEtapa] = useState(null);
   const [rozbalenieEtapy, setRozbalenieEtapy] = useState({});
+  const [loading, setLoading] = useState(true);
   const [novaZakazka, setNovaZakazka] = useState({
     nazov: '',
     zakaznik: '',
@@ -59,78 +62,89 @@ export default function ZamocnickaSprava() {
   const [editujemDielec, setEditujemDielec] = useState(false);
   const [editovanyDielec, setEditovanyDielec] = useState(null);
 
-  useEffect(() => {
-    const ulozeneData = localStorage.getItem('zamocnicke-zakazky');
-    if (ulozeneData) {
-      setZakazky(JSON.parse(ulozeneData));
-    } else {
-      const demoZakazky = [
-        {
-          id: 1,
-          nazov: 'Zábradlie rodinný dom',
-          zakaznik: 'Ján Novák',
-          kontaktnaOsoba: 'Ján Novák',
-          telefon: '+421 900 123 456',
-          email: 'jan.novak@email.sk',
-          stav: 'aktivna',
-          etapy: [
-            {
-              id: 1,
-              nazov: 'Výroba konštrukcie',
-              stav: 'dokoncene',
-              datumUkoncenia: '2024-12-20',
-              zinkovanie: 'ziarove',
-              farba: 'praskova',
-              farbaTon: 'RAL 7016',
-              hmotnostPodlaVykazu: '156.5',
-              datumVyrobyOd: '2024-12-01',
-              datumVyrobyDo: '2024-12-10',
-              datumPovrchovejUpravyOd: '2024-12-11',
-              datumPovrchovejUpravyDo: '2024-12-15',
-              datumMontazeOd: '2024-12-16',
-              datumMontazeDo: '2024-12-20',
-              popis: 'Oceľová konštrukcia zábradlia s nerezovým madlom',
-              dielce: [
-                { id: 1, nazov: 'Profil 40x40x2', hmotnostJednehoKs: 4.7, mnozstvo: 10, jednotka: 'ks' },
-                { id: 2, nazov: 'Profil 60x40x3', hmotnostJednehoKs: 8.2, mnozstvo: 5, jednotka: 'ks' }
-              ],
-              polozky: [],
-              spojovaciMaterial: [],
-              tyc: [],
-              platne: [],
-              spotrebny: []
-            },
-            {
-              id: 2,
-              nazov: 'Brána posuvná',
-              stav: 'prebiehajuce',
-              datumUkoncenia: '2024-12-30',
-              zinkovanie: 'ziarove',
-              farba: 'nic',
-              hmotnostPodlaVykazu: '280.0',
-              datumVyrobyOd: '2024-12-10',
-              datumVyrobyDo: '2024-12-25',
-              popis: 'Posuvná brána s elektrickým pohonom',
-              dielce: [],
-              polozky: [],
-              spojovaciMaterial: [],
-              tyc: [],
-              platne: [],
-              spotrebny: []
-            }
-          ]
-        }
-      ];
-      setZakazky(demoZakazky);
-      localStorage.setItem('zamocnicke-zakazky', JSON.stringify(demoZakazky));
-    }
+  // SUPABASE: Načítanie dát pri štarte
+  useEffect(() => { 
+    console.log('🔵 COMPONENT MOUNTED - volám nacitajZakazky()');
+    nacitajZakazky(); 
   }, []);
 
-  useEffect(() => {
-    if (zakazky.length > 0) {
-      localStorage.setItem('zamocnicke-zakazky', JSON.stringify(zakazky));
+  // SUPABASE: Funkcia na načítanie všetkých zákaziek s etapami a dielcami
+  const nacitajZakazky = async () => {
+    console.log('🟢 NAČÍTAVAM Z SUPABASE!');
+    try {
+      setLoading(true);
+      
+      const { data: zakazkyData, error: zakazkyError } = await supabase
+        .from('zakazky')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (zakazkyError) throw zakazkyError;
+
+      const zakazkySEtapami = await Promise.all(
+        (zakazkyData || []).map(async (zakazka) => {
+          const { data: etapyData, error: etapyError } = await supabase
+            .from('etapy')
+            .select('*')
+            .eq('zakazka_id', zakazka.id)
+            .order('created_at', { ascending: false });
+          
+          if (etapyError) throw etapyError;
+
+          const etapySDielcami = await Promise.all(
+            (etapyData || []).map(async (etapa) => {
+              const { data: dielceData, error: dielceError } = await supabase
+                .from('dielce')
+                .select('*')
+                .eq('etapa_id', etapa.id)
+                .order('created_at', { ascending: false});
+              
+              if (dielceError) throw dielceError;
+
+              return {
+                ...etapa,
+                kontaktnaOsoba: etapa.kontaktna_osoba,
+                hmotnostPodlaVykazu: etapa.hmotnost_podla_vykazu,
+                datumUkoncenia: etapa.datum_ukoncenia,
+                datumVyrobyOd: etapa.datum_vyroby_od,
+                datumVyrobyDo: etapa.datum_vyroby_do,
+                datumPovrchovejUpravyOd: etapa.datum_povrchovej_upravy_od,
+                datumPovrchovejUpravyDo: etapa.datum_povrchovej_upravy_do,
+                datumMontazeOd: etapa.datum_montaze_od,
+                datumMontazeDo: etapa.datum_montaze_do,
+                farbaTon: etapa.farba_ton,
+                dielce: (dielceData || []).map(d => ({
+                  ...d,
+                  hmotnostJednehoKs: d.hmotnost_jedneho_ks
+                })),
+                polozky: [],
+                spojovaciMaterial: [],
+                tyc: [],
+                platne: [],
+                spotrebny: [],
+                subory: []
+              };
+            })
+          );
+
+          return {
+            ...zakazka,
+            kontaktnaOsoba: zakazka.kontaktna_osoba,
+            nazovFirmy: zakazka.nazov_firmy,
+            etapy: etapySDielcami
+          };
+        })
+      );
+
+      setZakazky(zakazkySEtapami);
+      console.log('✅ Načítané zákazky:', zakazkySEtapami.length);
+    } catch (error) {
+      console.error('❌ Chyba pri načítaní:', error);
+      alert('Chyba pri načítaní dát z databázy: ' + error.message);
+    } finally {
+      setLoading(false);
     }
-  }, [zakazky]);
+  };
 
   const stavyZakaziek = {
     'priprava': { label: 'Príprava', farba: 'bg-yellow-100 text-yellow-700' },
@@ -159,263 +173,331 @@ export default function ZamocnickaSprava() {
     'mokry-vrch': 'Mokrý vrch'
   };
 
-  const pridatZakazku = () => {
+  // SUPABASE: Pridať zákazku
+  const pridatZakazku = async () => {
+    console.log('🟡 PRIDÁVAM ZÁKAZKU DO SUPABASE!');
     if (!novaZakazka.nazov || !novaZakazka.zakaznik) {
       alert('Vyplň aspoň názov a meno zákazníka');
       return;
     }
     
-    const zakazka = {
-      ...novaZakazka,
-      id: Date.now(),
-      etapy: []
-    };
-    
-    setZakazky([...zakazky, zakazka]);
-    setNovaZakazka({ 
-      nazov: '', 
-      zakaznik: '', 
-      kontaktnaOsoba: '',
-      telefon: '',
-      email: '',
-      nazovFirmy: '',
-      ico: '',
-      dic: '',
-      adresa: '',
-      stav: 'priprava' 
-    });
-    setZobrazenie('zoznam');
-  };
-
-  const vymazatZakazku = (id) => {
-    const novyZoznam = zakazky.map(z => {
-      if (z.id === id) {
-        return { ...z, stav: 'vymazane' };
-      }
-      return z;
-    });
-    
-    setZakazky(novyZoznam);
-    setShowDeleteConfirm(false);
-    setZakazkaToDelete(null);
-    
-    if (aktualnaZakazka?.id === id) {
+    try {
+      const { error } = await supabase.from('zakazky').insert([{
+        nazov: novaZakazka.nazov,
+        zakaznik: novaZakazka.zakaznik,
+        kontaktna_osoba: novaZakazka.kontaktnaOsoba,
+        telefon: novaZakazka.telefon,
+        email: novaZakazka.email,
+        nazov_firmy: novaZakazka.nazovFirmy,
+        ico: novaZakazka.ico,
+        dic: novaZakazka.dic,
+        adresa: novaZakazka.adresa,
+        stav: novaZakazka.stav
+      }]);
+      
+      if (error) throw error;
+      
+      await nacitajZakazky();
+      setNovaZakazka({ 
+        nazov: '', 
+        zakaznik: '', 
+        kontaktnaOsoba: '',
+        telefon: '',
+        email: '',
+        nazovFirmy: '',
+        ico: '',
+        dic: '',
+        adresa: '',
+        stav: 'priprava' 
+      });
       setZobrazenie('zoznam');
+      console.log('✅ Zákazka pridaná');
+    } catch (error) {
+      console.error('❌ Chyba:', error);
+      alert('Chyba pri ukladaní: ' + error.message);
     }
   };
 
-  const pridatEtapu = (zakazkaId) => {
+  // SUPABASE: Vymazať zákazku (zmena stavu)
+  const vymazatZakazku = async (id) => {
+    try {
+      const { error } = await supabase
+        .from('zakazky')
+        .update({ stav: 'vymazane' })
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      await nacitajZakazky();
+      setShowDeleteConfirm(false);
+      setZakazkaToDelete(null);
+      
+      if (aktualnaZakazka?.id === id) {
+        setZobrazenie('zoznam');
+      }
+    } catch (error) {
+      console.error('❌ Chyba:', error);
+      alert('Chyba pri vymazávaní: ' + error.message);
+    }
+  };
+
+  // SUPABASE: Pridať etapu
+  const pridatEtapu = async (zakazkaId) => {
     if (!novaEtapa.nazov) {
       alert('Vyplň názov etapy');
       return;
     }
     
-    const novyZoznam = zakazky.map(z => {
-      if (z.id === zakazkaId) {
-        const noveEtapy = [...(z.etapy || []), {
-          id: Date.now(),
-          ...novaEtapa,
-          dielce: [],
-          polozky: [],
-          spojovaciMaterial: [],
-          tyc: [],
-          platne: [],
-          spotrebny: []
-        }];
-        return { ...z, etapy: noveEtapy };
-      }
-      return z;
-    });
-    
-    setZakazky(novyZoznam);
-    setAktualnaZakazka(novyZoznam.find(z => z.id === zakazkaId));
-    setNovaEtapa({ 
-      nazov: '',
-      kontaktnaOsoba: '',
-      telefon: '',
-      email: '',
-      hmotnostPodlaVykazu: '',
-      datumUkoncenia: '',
-      datumVyrobyOd: '',
-      datumVyrobyDo: '',
-      datumPovrchovejUpravyOd: '',
-      datumPovrchovejUpravyDo: '',
-      datumMontazeOd: '',
-      datumMontazeDo: '',
-      zinkovanie: 'nic',
-      farba: 'nic',
-      farbaTon: '',
-      popis: '',
-      stav: 'planovane',
-      subory: []
-    });
-    setZobrazenie('detail');
+    try {
+      const { error } = await supabase.from('etapy').insert([{
+        zakazka_id: zakazkaId,
+        nazov: novaEtapa.nazov,
+        kontaktna_osoba: novaEtapa.kontaktnaOsoba,
+        telefon: novaEtapa.telefon,
+        email: novaEtapa.email,
+        hmotnost_podla_vykazu: novaEtapa.hmotnostPodlaVykazu || null,
+        datum_ukoncenia: novaEtapa.datumUkoncenia || null,
+        datum_vyroby_od: novaEtapa.datumVyrobyOd || null,
+        datum_vyroby_do: novaEtapa.datumVyrobyDo || null,
+        datum_povrchovej_upravy_od: novaEtapa.datumPovrchovejUpravyOd || null,
+        datum_povrchovej_upravy_do: novaEtapa.datumPovrchovejUpravyDo || null,
+        datum_montaze_od: novaEtapa.datumMontazeOd || null,
+        datum_montaze_do: novaEtapa.datumMontazeDo || null,
+        zinkovanie: novaEtapa.zinkovanie,
+        farba: novaEtapa.farba,
+        farba_ton: novaEtapa.farbaTon,
+        popis: novaEtapa.popis,
+        stav: novaEtapa.stav
+      }]);
+      
+      if (error) throw error;
+      
+      await nacitajZakazky();
+      setAktualnaZakazka(zakazky.find(z => z.id === zakazkaId));
+      setNovaEtapa({ 
+        nazov: '',
+        kontaktnaOsoba: '',
+        telefon: '',
+        email: '',
+        hmotnostPodlaVykazu: '',
+        datumUkoncenia: '',
+        datumVyrobyOd: '',
+        datumVyrobyDo: '',
+        datumPovrchovejUpravyOd: '',
+        datumPovrchovejUpravyDo: '',
+        datumMontazeOd: '',
+        datumMontazeDo: '',
+        zinkovanie: 'nic',
+        farba: 'nic',
+        farbaTon: '',
+        popis: '',
+        stav: 'planovane',
+        subory: []
+      });
+      setZobrazenie('detail');
+    } catch (error) {
+      console.error('❌ Chyba:', error);
+      alert('Chyba pri ukladaní: ' + error.message);
+    }
   };
 
-  const pridatDielec = (zakazkaId, etapaId) => {
+  // SUPABASE: Pridať dielec
+  const pridatDielec = async (zakazkaId, etapaId) => {
     if (!novyDielec.nazov || !novyDielec.mnozstvo) {
       alert('Vyplň názov a množstvo');
       return;
     }
     
-    const novyZoznam = zakazky.map(z => {
-      if (z.id === zakazkaId) {
-        const noveEtapy = z.etapy.map(e => {
-          if (e.id === etapaId) {
-            return {
-              ...e,
-              dielce: [...e.dielce, { 
-                id: Date.now(), 
-                ...novyDielec,
-                mnozstvo: parseFloat(novyDielec.mnozstvo)
-              }]
-            };
-          }
-          return e;
-        });
-        return { ...z, etapy: noveEtapy };
-      }
-      return z;
-    });
-    
-    setZakazky(novyZoznam);
-    setAktualnaZakazka(novyZoznam.find(z => z.id === zakazkaId));
-    const updatedEtapa = novyZoznam.find(z => z.id === zakazkaId)?.etapy.find(e => e.id === etapaId);
-    setAktualnaEtapa(updatedEtapa);
-    setNovyDielec({ nazov: '', mnozstvo: '', jednotka: 'm', poznamka: '' });
-    setZobrazenie('detail-etapy');
+    try {
+      const { error } = await supabase.from('dielce').insert([{
+        etapa_id: etapaId,
+        nazov: novyDielec.nazov,
+        hmotnost_jedneho_ks: novyDielec.hmotnostJednehoKs || null,
+        mnozstvo: parseFloat(novyDielec.mnozstvo),
+        jednotka: novyDielec.jednotka,
+        poznamka: novyDielec.poznamka
+      }]);
+      
+      if (error) throw error;
+      
+      await nacitajZakazky();
+      const z = zakazky.find(z => z.id === zakazkaId);
+      const e = z?.etapy.find(e => e.id === etapaId);
+      setAktualnaZakazka(z);
+      setAktualnaEtapa(e);
+      setNovyDielec({ nazov: '', mnozstvo: '', jednotka: 'm', poznamka: '' });
+      setZobrazenie('detail-etapy');
+    } catch (error) {
+      console.error('❌ Chyba:', error);
+      alert('Chyba pri ukladaní: ' + error.message);
+    }
   };
 
-  const ulozitUpravuZakazky = () => {
+  // SUPABASE: Upraviť zákazku
+  const ulozitUpravuZakazky = async () => {
     if (!editovanaZakazka.nazov || !editovanaZakazka.zakaznik) {
       alert('Vyplň aspoň názov a meno zákazníka');
       return;
     }
 
-    const novyZoznam = zakazky.map(z => {
-      if (z.id === editovanaZakazka.id) {
-        return { ...z, ...editovanaZakazka };
-      }
-      return z;
-    });
-
-    setZakazky(novyZoznam);
-    setAktualnaZakazka(novyZoznam.find(z => z.id === editovanaZakazka.id));
-    setEditujemZakazku(false);
-    setEditovanaZakazka(null);
+    try {
+      const { error } = await supabase.from('zakazky').update({
+        nazov: editovanaZakazka.nazov,
+        zakaznik: editovanaZakazka.zakaznik,
+        kontaktna_osoba: editovanaZakazka.kontaktnaOsoba,
+        telefon: editovanaZakazka.telefon,
+        email: editovanaZakazka.email,
+        nazov_firmy: editovanaZakazka.nazovFirmy,
+        ico: editovanaZakazka.ico,
+        dic: editovanaZakazka.dic,
+        adresa: editovanaZakazka.adresa
+      }).eq('id', editovanaZakazka.id);
+      
+      if (error) throw error;
+      
+      await nacitajZakazky();
+      setAktualnaZakazka(zakazky.find(z => z.id === editovanaZakazka.id));
+      setEditujemZakazku(false);
+      setEditovanaZakazka(null);
+    } catch (error) {
+      console.error('❌ Chyba:', error);
+      alert('Chyba pri ukladaní: ' + error.message);
+    }
   };
 
-  const ulozitUpravuEtapy = () => {
+  // SUPABASE: Upraviť etapu
+  const ulozitUpravuEtapy = async () => {
     if (!editovanaEtapa.nazov) {
       alert('Vyplň názov etapy');
       return;
     }
 
-    const novyZoznam = zakazky.map(z => {
-      if (z.id === aktualnaZakazka.id) {
-        const noveEtapy = z.etapy.map(e => {
-          if (e.id === editovanaEtapa.id) {
-            return { ...e, ...editovanaEtapa };
-          }
-          return e;
-        });
-        return { ...z, etapy: noveEtapy };
-      }
-      return z;
-    });
-
-    setZakazky(novyZoznam);
-    setAktualnaZakazka(novyZoznam.find(z => z.id === aktualnaZakazka.id));
-    setAktualnaEtapa(novyZoznam.find(z => z.id === aktualnaZakazka.id)?.etapy.find(e => e.id === editovanaEtapa.id));
-    setEditujemEtapu(false);
-    setEditovanaEtapa(null);
+    try {
+      const { error } = await supabase.from('etapy').update({
+        nazov: editovanaEtapa.nazov,
+        kontaktna_osoba: editovanaEtapa.kontaktnaOsoba,
+        telefon: editovanaEtapa.telefon,
+        email: editovanaEtapa.email,
+        hmotnost_podla_vykazu: editovanaEtapa.hmotnostPodlaVykazu || null,
+        datum_ukoncenia: editovanaEtapa.datumUkoncenia || null,
+        datum_vyroby_od: editovanaEtapa.datumVyrobyOd || null,
+        datum_vyroby_do: editovanaEtapa.datumVyrobyDo || null,
+        datum_povrchovej_upravy_od: editovanaEtapa.datumPovrchovejUpravyOd || null,
+        datum_povrchovej_upravy_do: editovanaEtapa.datumPovrchovejUpravyDo || null,
+        datum_montaze_od: editovanaEtapa.datumMontazeOd || null,
+        datum_montaze_do: editovanaEtapa.datumMontazeDo || null,
+        zinkovanie: editovanaEtapa.zinkovanie,
+        farba: editovanaEtapa.farba,
+        farba_ton: editovanaEtapa.farbaTon,
+        popis: editovanaEtapa.popis
+      }).eq('id', editovanaEtapa.id);
+      
+      if (error) throw error;
+      
+      await nacitajZakazky();
+      const z = zakazky.find(z => z.id === aktualnaZakazka.id);
+      const e = z?.etapy.find(e => e.id === editovanaEtapa.id);
+      setAktualnaZakazka(z);
+      setAktualnaEtapa(e);
+      setEditujemEtapu(false);
+      setEditovanaEtapa(null);
+    } catch (error) {
+      console.error('❌ Chyba:', error);
+      alert('Chyba pri ukladaní: ' + error.message);
+    }
   };
 
-  const ulozitUpravuDielca = () => {
+  // SUPABASE: Upraviť dielec
+  const ulozitUpravuDielca = async () => {
     if (!editovanyDielec.nazov || !editovanyDielec.mnozstvo) {
       alert('Vyplň názov a množstvo');
       return;
     }
 
-    const novyZoznam = zakazky.map(z => {
-      if (z.id === aktualnaZakazka.id) {
-        const noveEtapy = z.etapy.map(e => {
-          if (e.id === aktualnaEtapa.id) {
-            const noveDielce = e.dielce.map(d => {
-              if (d.id === editovanyDielec.id) {
-                return { ...editovanyDielec, mnozstvo: parseFloat(editovanyDielec.mnozstvo) };
-              }
-              return d;
-            });
-            return { ...e, dielce: noveDielce };
-          }
-          return e;
-        });
-        return { ...z, etapy: noveEtapy };
-      }
-      return z;
-    });
-
-    setZakazky(novyZoznam);
-    setAktualnaZakazka(novyZoznam.find(z => z.id === aktualnaZakazka.id));
-    setAktualnaEtapa(novyZoznam.find(z => z.id === aktualnaZakazka.id)?.etapy.find(e => e.id === aktualnaEtapa.id));
-    setEditujemDielec(false);
-    setEditovanyDielec(null);
-  };
-
-  const vymazatDielec = (dielecId) => {
-    if (!confirm('Naozaj chceš vymazať tento dielec?')) return;
-
-    const novyZoznam = zakazky.map(z => {
-      if (z.id === aktualnaZakazka.id) {
-        const noveEtapy = z.etapy.map(e => {
-          if (e.id === aktualnaEtapa.id) {
-            return { ...e, dielce: e.dielce.filter(d => d.id !== dielecId) };
-          }
-          return e;
-        });
-        return { ...z, etapy: noveEtapy };
-      }
-      return z;
-    });
-
-    setZakazky(novyZoznam);
-    setAktualnaZakazka(novyZoznam.find(z => z.id === aktualnaZakazka.id));
-    setAktualnaEtapa(novyZoznam.find(z => z.id === aktualnaZakazka.id)?.etapy.find(e => e.id === aktualnaEtapa.id));
-  };
-
-  const zmenitStavZakazky = (zakazkaId, novyStav) => {
-    const novyZoznam = zakazky.map(z => {
-      if (z.id === zakazkaId) {
-        return { ...z, stav: novyStav };
-      }
-      return z;
-    });
-    
-    setZakazky(novyZoznam);
-    setAktualnaZakazka(novyZoznam.find(z => z.id === zakazkaId));
-  };
-
-  const zmenitStavEtapy = (zakazkaId, etapaId, novyStav) => {
-    const novyZoznam = zakazky.map(z => {
-      if (z.id === zakazkaId) {
-        const noveEtapy = z.etapy.map(e => {
-          if (e.id === etapaId) {
-            return { ...e, stav: novyStav };
-          }
-          return e;
-        });
-        return { ...z, etapy: noveEtapy };
-      }
-      return z;
-    });
-    
-    setZakazky(novyZoznam);
-    if (zobrazenie === 'detail-etapy') {
-      setAktualnaEtapa(novyZoznam.find(z => z.id === zakazkaId)?.etapy.find(e => e.id === etapaId));
+    try {
+      const { error } = await supabase.from('dielce').update({
+        nazov: editovanyDielec.nazov,
+        hmotnost_jedneho_ks: editovanyDielec.hmotnostJednehoKs || null,
+        mnozstvo: parseFloat(editovanyDielec.mnozstvo),
+        jednotka: editovanyDielec.jednotka,
+        poznamka: editovanyDielec.poznamka
+      }).eq('id', editovanyDielec.id);
+      
+      if (error) throw error;
+      
+      await nacitajZakazky();
+      const z = zakazky.find(z => z.id === aktualnaZakazka.id);
+      const e = z?.etapy.find(e => e.id === aktualnaEtapa.id);
+      setAktualnaZakazka(z);
+      setAktualnaEtapa(e);
+      setEditujemDielec(false);
+      setEditovanyDielec(null);
+    } catch (error) {
+      console.error('❌ Chyba:', error);
+      alert('Chyba pri ukladaní: ' + error.message);
     }
-    if (aktualnaZakazka) {
-      setAktualnaZakazka(novyZoznam.find(z => z.id === zakazkaId));
+  };
+
+  // SUPABASE: Vymazať dielec
+  const vymazatDielec = async (dielecId) => {
+    if (!confirm('Naozaj chceš vymazať tento dielec?')) return;
+    
+    try {
+      const { error } = await supabase.from('dielce').delete().eq('id', dielecId);
+      
+      if (error) throw error;
+      
+      await nacitajZakazky();
+      const z = zakazky.find(z => z.id === aktualnaZakazka.id);
+      const e = z?.etapy.find(e => e.id === aktualnaEtapa.id);
+      setAktualnaZakazka(z);
+      setAktualnaEtapa(e);
+    } catch (error) {
+      console.error('❌ Chyba:', error);
+      alert('Chyba pri vymazávaní: ' + error.message);
+    }
+  };
+
+  // SUPABASE: Zmeniť stav zákazky
+  const zmenitStavZakazky = async (zakazkaId, novyStav) => {
+    try {
+      const { error } = await supabase
+        .from('zakazky')
+        .update({ stav: novyStav })
+        .eq('id', zakazkaId);
+      
+      if (error) throw error;
+      
+      await nacitajZakazky();
+      setAktualnaZakazka(zakazky.find(z => z.id === zakazkaId));
+    } catch (error) {
+      console.error('❌ Chyba:', error);
+      alert('Chyba pri zmene stavu: ' + error.message);
+    }
+  };
+
+  // SUPABASE: Zmeniť stav etapy
+  const zmenitStavEtapy = async (zakazkaId, etapaId, novyStav) => {
+    try {
+      const { error } = await supabase
+        .from('etapy')
+        .update({ stav: novyStav })
+        .eq('id', etapaId);
+      
+      if (error) throw error;
+      
+      await nacitajZakazky();
+      if (zobrazenie === 'detail-etapy') {
+        const z = zakazky.find(z => z.id === zakazkaId);
+        const e = z?.etapy.find(e => e.id === etapaId);
+        setAktualnaEtapa(e);
+      }
+      if (aktualnaZakazka) {
+        setAktualnaZakazka(zakazky.find(z => z.id === zakazkaId));
+      }
+    } catch (error) {
+      console.error('❌ Chyba:', error);
+      alert('Chyba pri zmene stavu: ' + error.message);
     }
   };
 
@@ -428,6 +510,22 @@ export default function ZamocnickaSprava() {
   const vypocitajPracovneDni = (datumOd, datumDo) => {
     if (!datumOd || !datumDo) return null;
     
+    const start = new Date(datumOd);
+    const end = new Date(datumDo);
+    
+    let pocetDni = 0;
+    let aktualnyDatum = new Date(start);
+    
+    while (aktualnyDatum <= end) {
+      const denVTyzdni = aktualnyDatum.getDay();
+      if (denVTyzdni !== 0 && denVTyzdni !== 6) {
+        pocetDni++;
+      }
+      aktualnyDatum.setDate(aktualnyDatum.getDate() + 1);
+    }
+    
+    return pocetDni;
+  };
     const start = new Date(datumOd);
     const end = new Date(datumDo);
     
