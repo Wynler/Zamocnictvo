@@ -103,7 +103,7 @@ export default function ZamocnickaSprava() {
       await nacitajData();
       setZobrazenie('zoznam');
       setNovaZakazka({
-        nazov: '', zakaznik: '', kontaktnaOsoba: '', telefon: '', email: '',
+        nazov: '', cisloZakazky: '', zakaznik: '', kontaktnaOsoba: '', telefon: '', email: '',
         nazovFirmy: '', ico: '', dic: '', adresa: '', stav: 'priprava'
       });
     } catch (error) {
