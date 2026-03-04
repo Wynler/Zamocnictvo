@@ -41,12 +41,12 @@ export default function ZamocnickaSprava() {
   
   // FORMS
   const [novaZakazka, setNovaZakazka] = useState({
-    nazov: '', zakaznik: '', kontaktnaOsoba: '', telefon: '', email: '',
+    nazov: '',  cisloZakazky: '', zakaznik: '', kontaktnaOsoba: '', telefon: '', email: '',
     nazovFirmy: '', ico: '', dic: '', adresa: '', stav: 'priprava'
   });
   
   const [novaEtapa, setNovaEtapa] = useState({
-    nazov: '', kontaktnaOsoba: '', telefon: '', email: '', hmotnostPodlaVykazu: '',
+    nazov: '',  cisloZakazky: '', kontaktnaOsoba: '', telefon: '', email: '', hmotnostPodlaVykazu: '',
     datumUkoncenia: '', datumVyrobyOd: '', datumVyrobyDo: '',
     datumPovrchovejUpravyOd: '', datumPovrchovejUpravyDo: '',
     datumMontazeOd: '', datumMontazeDo: '',
@@ -103,7 +103,7 @@ export default function ZamocnickaSprava() {
       await nacitajData();
       setZobrazenie('zoznam');
       setNovaZakazka({
-        nazov: '', cisloZakazky: '', zakaznik: '', kontaktnaOsoba: '', telefon: '', email: '',
+        nazov: '', cisloZakazky: '', cisloZakazky: '', zakaznik: '', kontaktnaOsoba: '', telefon: '', email: '',
         nazovFirmy: '', ico: '', dic: '', adresa: '', stav: 'priprava'
       });
     } catch (error) {
@@ -161,7 +161,7 @@ export default function ZamocnickaSprava() {
       setAktualnaZakazka(aktualizovanaZakazka);
       setZobrazenie('detail');
       setNovaEtapa({
-        nazov: '', kontaktnaOsoba: '', telefon: '', email: '', hmotnostPodlaVykazu: '',
+        nazov: '',  cisloZakazky: '',kontaktnaOsoba: '', telefon: '', email: '', hmotnostPodlaVykazu: '',
         datumUkoncenia: '', datumVyrobyOd: '', datumVyrobyDo: '',
         datumPovrchovejUpravyOd: '', datumPovrchovejUpravyDo: '',
         datumMontazeOd: '', datumMontazeDo: '',
