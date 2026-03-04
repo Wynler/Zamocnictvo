@@ -27,7 +27,7 @@ export default function ZoznamZakaziek({
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         {/* DELETE CONFIRM MODAL */}
         {showDeleteConfirm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -104,33 +104,105 @@ export default function ZoznamZakaziek({
           </div>
         </div>
 
-        {/* LIST */}
-        <div className="grid gap-4">
-          {filtrovanieZakazky.map(zakazka => (
-            <ZakazkaKarta
-              key={zakazka.id}
-              zakazka={zakazka}
-              stavyZakaziek={stavyZakaziek}
-              onDetail={onDetailZakazky}
-              onVymazat={onVymazatZakazku}
-            />
-          ))}
-
-          {filtrovanieZakazky.length === 0 && (
-            <div className="text-center py-12 text-gray-500">
-              <p className="text-lg mb-2">
-                {filterStav === 'vsetky' 
-                  ? 'Žiadne zákazky' 
-                  : `Žiadne zákazky v stave "${stavyZakaziek[filterStav]?.label}"`}
-              </p>
-              <p className="text-sm">
-                {filterStav === 'vsetky' 
-                  ? 'Začni pridaním novej zákazky' 
-                  : 'Skús zmeniť filter'}
-              </p>
+        {/* TABUĽKA - KOMPAKTNÝ DIZAJN */}
+        {filtrovanieZakazky.length > 0 ? (
+          <div className="bg-white rounded-lg shadow overflow-hidden">
+            {/* HEADER ROW */}
+            <div className="bg-gray-50 border-b border-gray-200 px-6 py-3 grid grid-cols-12 gap-4 items-center text-sm font-semibold text-gray-600">
+              <div className="col-span-1">Číslo</div>
+              <div className="col-span-3">Názov zákazky</div>
+              <div className="col-span-2">Zákazník</div>
+              <div className="col-span-2">Kontakt</div>
+              <div className="col-span-2">Etapy</div>
+              <div className="col-span-1">Stav</div>
+              <div className="col-span-1 text-right">Akcie</div>
             </div>
-          )}
-        </div>
+
+            {/* DATA ROWS */}
+            {filtrovanieZakazky.map((zakazka, index) => (
+              <div 
+                key={zakazka.id}
+                className="border-b border-gray-100 px-6 py-4 grid grid-cols-12 gap-4 items-center hover:bg-gray-50 transition cursor-pointer"
+                onClick={() => onDetailZakazky(zakazka)}
+              >
+                {/* ČÍSLO */}
+                <div className="col-span-1">
+                  <span className="text-lg font-bold text-gray-400">#{zakazka.id}</span>
+                </div>
+
+                {/* NÁZOV */}
+                <div className="col-span-3">
+                  <h3 className="font-semibold text-gray-800 text-base">
+                    {zakazka.nazov}
+                  </h3>
+                </div>
+
+                {/* ZÁKAZNÍK */}
+                <div className="col-span-2">
+                  <p className="text-gray-700">{zakazka.zakaznik}</p>
+                </div>
+
+                {/* KONTAKT */}
+                <div className="col-span-2">
+                  <div className="text-sm text-gray-600">
+                    {zakazka.telefon && <div>📞 {zakazka.telefon}</div>}
+                    {zakazka.email && <div className="truncate">✉️ {zakazka.email}</div>}
+                    {!zakazka.telefon && !zakazka.email && <span className="text-gray-400">-</span>}
+                  </div>
+                </div>
+
+                {/* ETAPY */}
+                <div className="col-span-2">
+                  <div className="flex items-center gap-3 text-sm">
+                    <span className="font-medium text-gray-700">
+                      📋 {zakazka.etapy?.length || 0}
+                    </span>
+                    {zakazka.etapy?.length > 0 && (
+                      <span className="text-green-600">
+                        ✅ {zakazka.etapy.filter(e => e.stav === 'dokoncene').length}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* STAV */}
+                <div className="col-span-1">
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium inline-block ${
+                    stavyZakaziek[zakazka.stav]?.farba || 'bg-gray-100 text-gray-700'
+                  }`}>
+                    {stavyZakaziek[zakazka.stav]?.label || 'Príprava'}
+                  </span>
+                </div>
+
+                {/* AKCIE */}
+                <div className="col-span-1 text-right">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onVymazatZakazku(zakazka);
+                    }}
+                    className="text-red-600 hover:text-red-700 text-sm font-medium"
+                  >
+                    Vymazať
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="bg-white rounded-lg shadow p-12 text-center text-gray-500">
+            <p className="text-lg mb-2">
+              {filterStav === 'vsetky' 
+                ? 'Žiadne zákazky' 
+                : `Žiadne zákazky v stave "${stavyZakaziek[filterStav]?.label}"`}
+            </p>
+            <p className="text-sm">
+              {filterStav === 'vsetky' 
+                ? 'Začni pridaním novej zákazky' 
+                : 'Skús zmeniť filter'}
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
