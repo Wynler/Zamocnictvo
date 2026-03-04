@@ -36,6 +36,19 @@ export default function NovaZakazka({
                 </div>
 
                 <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Číslo zákazky (pre účtovníctvo)
+                    </label>
+                <input
+                      type="text"
+                      value={novaZakazka.cisloZakazky}
+                      onChange={(e) => setNovaZakazka({...novaZakazka, cisloZakazky: e.target.value})}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                      placeholder="napr. ZAK-2024-001"
+                  />
+                </div>      
+
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Meno zákazníka *
                   </label>
