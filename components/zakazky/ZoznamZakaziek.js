@@ -126,9 +126,11 @@ export default function ZoznamZakaziek({
                 onClick={() => onDetailZakazky(zakazka)}
               >
                 {/* ČÍSLO */}
-                <div className="col-span-1">
-                  <span className="text-lg font-bold text-gray-400">#{zakazka.id}</span>
-                </div>
+              <div className="col-span-1">
+                    <span className="text-lg font-bold text-gray-400">
+                        {zakazka.cisloZakazky || `#${zakazka.id}`}
+                            </span>
+                  </div>
 
                 {/* NÁZOV */}
                 <div className="col-span-3">
