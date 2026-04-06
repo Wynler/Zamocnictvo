@@ -1,4 +1,7 @@
+'use client'
+import { useState } from 'react';
 import { ArrowLeft, Pencil, Plus, Trash2, Upload, X } from 'lucide-react';
+import ImportModal from '../import/ImportModal';
 
 export default function DetailEtapy({
   aktualnaZakazka,
@@ -27,16 +30,19 @@ export default function DetailEtapy({
   onZrusitEditaciuDielca,
   onImportExcel,
   vypocitajPracovneDni,
-  generateKalendar
+  generateKalendar,
+  nacitajData
 }) {
   const dniVyroba = vypocitajPracovneDni(aktualnaEtapa.datumVyrobyOd, aktualnaEtapa.datumVyrobyDo);
   const dniPovrch = vypocitajPracovneDni(aktualnaEtapa.datumPovrchovejUpravyOd, aktualnaEtapa.datumPovrchovejUpravyDo);
   const dniMontaz = vypocitajPracovneDni(aktualnaEtapa.datumMontazeOd, aktualnaEtapa.datumMontazeDo);
   const kalendar = generateKalendar(aktualnaEtapa);
+  const [showImport, setShowImport] = useState(false);
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
+
         {/* IMPORT STATUS */}
         {showImportStatus && (
           <div className="fixed top-4 right-4 bg-white shadow-lg rounded-lg p-4 border-l-4 border-blue-500 z-50 max-w-md">
@@ -49,7 +55,7 @@ export default function DetailEtapy({
           </div>
         )}
 
-        {/* HEADER */}
+        {/* SPÄŤ */}
         <button onClick={onSpat} className="flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-4">
           <ArrowLeft size={20} /> Späť na zákazku
         </button>
@@ -60,18 +66,13 @@ export default function DetailEtapy({
             <h2 className="text-xl font-semibold text-gray-800">
               Dielce ({aktualnaEtapa.dielce?.length || 0})
             </h2>
-            <div className="flex gap-2">
-              <label className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 cursor-pointer">
-                <Upload size={16} />
-                Import Excel
-                <input
-                  type="file"
-                  accept=".xlsx,.xls"
-                  onChange={onImportExcel}
-                  className="hidden"
-                />
-              </label>
-            </div>
+            <button
+              onClick={() => setShowImport(true)}
+              className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
+            >
+              <Upload size={16} />
+              Import Excel
+            </button>
           </div>
 
           {/* PRIDAŤ DIELEC FORM */}
@@ -124,11 +125,13 @@ export default function DetailEtapy({
               <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Č. dielca</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Názov</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Hmotnosť (kg/ks)</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Množstvo</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Jednotka</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Poznámka</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Profil</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Materiál</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Počet</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">1ks kg</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Celk. kg</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Akcie</th>
                   </tr>
                 </thead>
@@ -140,8 +143,41 @@ export default function DetailEtapy({
                           <td className="px-4 py-3">
                             <input
                               type="text"
+                              value={editovanyDielec.cislo_dielca || ''}
+                              onChange={(e) => setEditovanyDielec({...editovanyDielec, cislo_dielca: e.target.value})}
+                              className="w-full px-2 py-1 border border-blue-300 rounded"
+                            />
+                          </td>
+                          <td className="px-4 py-3">
+                            <input
+                              type="text"
                               value={editovanyDielec.nazov}
                               onChange={(e) => setEditovanyDielec({...editovanyDielec, nazov: e.target.value})}
+                              className="w-full px-2 py-1 border border-blue-300 rounded"
+                            />
+                          </td>
+                          <td className="px-4 py-3">
+                            <input
+                              type="text"
+                              value={editovanyDielec.profil || ''}
+                              onChange={(e) => setEditovanyDielec({...editovanyDielec, profil: e.target.value})}
+                              className="w-full px-2 py-1 border border-blue-300 rounded"
+                            />
+                          </td>
+                          <td className="px-4 py-3">
+                            <input
+                              type="text"
+                              value={editovanyDielec.material || ''}
+                              onChange={(e) => setEditovanyDielec({...editovanyDielec, material: e.target.value})}
+                              className="w-full px-2 py-1 border border-blue-300 rounded"
+                            />
+                          </td>
+                          <td className="px-4 py-3">
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={editovanyDielec.mnozstvo}
+                              onChange={(e) => setEditovanyDielec({...editovanyDielec, mnozstvo: e.target.value})}
                               className="w-full px-2 py-1 border border-blue-300 rounded"
                             />
                           </td>
@@ -158,66 +194,33 @@ export default function DetailEtapy({
                             <input
                               type="number"
                               step="0.01"
-                              value={editovanyDielec.mnozstvo}
-                              onChange={(e) => setEditovanyDielec({...editovanyDielec, mnozstvo: e.target.value})}
-                              className="w-full px-2 py-1 border border-blue-300 rounded"
-                            />
-                          </td>
-                          <td className="px-4 py-3">
-                            <select
-                              value={editovanyDielec.jednotka}
-                              onChange={(e) => setEditovanyDielec({...editovanyDielec, jednotka: e.target.value})}
-                              className="w-full px-2 py-1 border border-blue-300 rounded"
-                            >
-                              <option value="m">m</option>
-                              <option value="kg">kg</option>
-                              <option value="ks">ks</option>
-                            </select>
-                          </td>
-                          <td className="px-4 py-3">
-                            <input
-                              type="text"
-                              value={editovanyDielec.poznamka || ''}
-                              onChange={(e) => setEditovanyDielec({...editovanyDielec, poznamka: e.target.value})}
+                              value={editovanyDielec.hmotnost_celkova || ''}
+                              onChange={(e) => setEditovanyDielec({...editovanyDielec, hmotnost_celkova: e.target.value})}
                               className="w-full px-2 py-1 border border-blue-300 rounded"
                             />
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex gap-2">
-                              <button
-                                onClick={onUlozitDielec}
-                                className="text-green-600 hover:text-green-700 text-sm"
-                              >
-                                ✓ Uložiť
-                              </button>
-                              <button
-                                onClick={onZrusitEditaciuDielca}
-                                className="text-gray-600 hover:text-gray-700 text-sm"
-                              >
-                                Zrušiť
-                              </button>
+                              <button onClick={onUlozitDielec} className="text-green-600 hover:text-green-700 text-sm">✓ Uložiť</button>
+                              <button onClick={onZrusitEditaciuDielca} className="text-gray-600 hover:text-gray-700 text-sm">Zrušiť</button>
                             </div>
                           </td>
                         </>
                       ) : (
                         <>
-                          <td className="px-4 py-3 font-medium text-gray-800">{dielec.nazov}</td>
-                          <td className="px-4 py-3 text-gray-600">{dielec.hmotnostJednehoKs || '-'}</td>
+                          <td className="px-4 py-3 text-gray-500 font-mono text-sm">{dielec.cislo_dielca || '-'}</td>
+                          <td className="px-4 py-3 font-medium text-gray-800">{dielec.nazov || '-'}</td>
+                          <td className="px-4 py-3 text-gray-600">{dielec.profil || '-'}</td>
+                          <td className="px-4 py-3 text-gray-600">{dielec.material || '-'}</td>
                           <td className="px-4 py-3 text-gray-600">{dielec.mnozstvo}</td>
-                          <td className="px-4 py-3 text-gray-600">{dielec.jednotka}</td>
-                          <td className="px-4 py-3 text-gray-600">{dielec.poznamka || '-'}</td>
+                          <td className="px-4 py-3 text-gray-600">{dielec.hmotnostJednehoKs || '-'}</td>
+                          <td className="px-4 py-3 text-gray-600">{dielec.hmotnost_celkova || '-'}</td>
                           <td className="px-4 py-3">
                             <div className="flex gap-2">
-                              <button
-                                onClick={() => onZacatEditovatDielec(dielec)}
-                                className="text-blue-600 hover:text-blue-700"
-                              >
+                              <button onClick={() => onZacatEditovatDielec(dielec)} className="text-blue-600 hover:text-blue-700">
                                 <Pencil size={16} />
                               </button>
-                              <button
-                                onClick={() => onVymazatDielec(dielec.id)}
-                                className="text-red-600 hover:text-red-700"
-                              >
+                              <button onClick={() => onVymazatDielec(dielec.id)} className="text-red-600 hover:text-red-700">
                                 <Trash2 size={16} />
                               </button>
                             </div>
@@ -261,6 +264,16 @@ export default function DetailEtapy({
             </div>
           </div>
         )}
+
+        {/* IMPORT MODAL */}
+        {showImport && (
+          <ImportModal
+            etapaId={aktualnaEtapa.id}
+            onClose={() => setShowImport(false)}
+            onSuccess={() => { setShowImport(false); nacitajData(); }}
+          />
+        )}
+
       </div>
     </div>
   );
