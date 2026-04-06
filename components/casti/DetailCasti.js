@@ -4,29 +4,35 @@ import { Trash2 } from 'lucide-react';
 import { nacitajCastiEtapy, aktualizujStavDielcaCasti, vymazCast } from '../../lib/api/casti';
 
 const FAZY = [
-  { pole: 'poskladane',       label: 'Poskladané',     farba: 'text-blue-600',   },
-  { pole: 'zvarene',          label: 'Zvarené',        farba: 'text-orange-600', },
-  { pole: 'povrchova_uprava', label: 'Povrch. úprava', farba: 'text-purple-600', },
-  { pole: 'vyvezene',         label: 'Vyvezené',       farba: 'text-yellow-600', },
-  { pole: 'namontovane',      label: 'Namontované',    farba: 'text-green-600',  },
+  { pole: 'poskladane',        label: 'Poskladané',     farba: 'text-blue-600'   },
+  { pole: 'zvarene',           label: 'Zvarené',        farba: 'text-orange-600' },
+  { pole: 'povrchova_uprava',  label: 'Povrch. úprava', farba: 'text-purple-600' },
+  { pole: 'vyvezene',          label: 'Vyvezené',       farba: 'text-yellow-600' },
+  { pole: 'namontovane',       label: 'Namontované',    farba: 'text-green-600'  },
 ];
 
-const FILTRE = [
-  { key: 'vsetky',   label: 'Všetky' },
-  { key: 'hotove',   label: 'Hotové' },
-  { key: 'nehotove', label: 'Nehotové' },
-];
+// Cyklus filtru pre každú fázu: null → 'nehotove' → 'hotove' → null
+function dalsiFilter(aktualny) {
+  if (aktualny === null) return 'nehotove';
+  if (aktualny === 'nehotove') return 'hotove';
+  return null;
+}
+
+function labelFiltra(stav) {
+  if (stav === 'nehotove') return '✗';
+  if (stav === 'hotove') return '✓';
+  return null;
+}
 
 export default function DetailCasti({ etapa, onSpat, nacitajData }) {
   const [casti, setCasti] = useState([]);
   const [aktivnaCast, setAktivnaCast] = useState(null);
   const [loading, setLoading] = useState(true);
   const [ukladam, setUkladam] = useState(null);
-  const [filter, setFilter] = useState('vsetky');
+  // filter per fáza: { poskladane: null | 'hotove' | 'nehotove', ... }
+  const [filtre, setFiltre] = useState({});
 
-  useEffect(() => {
-    nacitaj();
-  }, [etapa.id]);
+  useEffect(() => { nacitaj(); }, [etapa.id]);
 
   async function nacitaj() {
     setLoading(true);
@@ -56,6 +62,14 @@ export default function DetailCasti({ etapa, onSpat, nacitajData }) {
     }
   }
 
+  function handleFilterFazy(pole) {
+    setFiltre(prev => ({ ...prev, [pole]: dalsiFilter(prev[pole] ?? null) }));
+  }
+
+  function resetFiltre() {
+    setFiltre({});
+  }
+
   async function handleVymazCast(castId) {
     if (!confirm('Naozaj vymazať túto časť?')) return;
     try {
@@ -76,8 +90,7 @@ export default function DetailCasti({ etapa, onSpat, nacitajData }) {
 
   function progresFazy(cast, pole) {
     if (cast.dielce.length === 0) return 0;
-    const hotove = cast.dielce.filter(dc => dc[pole]).length;
-    return Math.round((hotove / cast.dielce.length) * 100);
+    return Math.round((cast.dielce.filter(dc => dc[pole]).length / cast.dielce.length) * 100);
   }
 
   if (loading) return <p className="text-gray-400 py-8 text-center">Načítavam...</p>;
@@ -100,16 +113,15 @@ export default function DetailCasti({ etapa, onSpat, nacitajData }) {
     return A.localeCompare(B, undefined, { numeric: true });
   });
 
-  // Filtrovanie
-  const filtrovane = zoradene.filter(dc => {
-    const vsetkyHotove = FAZY.every(f => dc[f.pole]);
-    if (filter === 'hotove') return vsetkyHotove;
-    if (filter === 'nehotove') return !vsetkyHotove;
-    return true;
-  });
+  // Aplikuj všetky aktívne filtre
+  const aktFiltre = Object.entries(filtre).filter(([_, v]) => v !== null);
+  const filtrovane = zoradene.filter(dc =>
+    aktFiltre.every(([pole, stav]) =>
+      stav === 'hotove' ? !!dc[pole] : !dc[pole]
+    )
+  );
 
-  const pocetHotovych = zoradene.filter(dc => FAZY.every(f => dc[f.pole])).length;
-  const pocetNehotovych = zoradene.length - pocetHotovych;
+  const maAktivnyFilter = aktFiltre.length > 0;
 
   return (
     <div className="space-y-4">
@@ -121,7 +133,7 @@ export default function DetailCasti({ etapa, onSpat, nacitajData }) {
           return (
             <button
               key={c.id}
-              onClick={() => { setAktivnaCast(c.id); setFilter('vsetky'); }}
+              onClick={() => { setAktivnaCast(c.id); resetFiltre(); }}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-all ${
                 c.id === aktivnaCast
                   ? 'bg-purple-600 text-white border-purple-600'
@@ -146,7 +158,17 @@ export default function DetailCasti({ etapa, onSpat, nacitajData }) {
           <div className="flex items-center justify-between p-4 border-b">
             <div>
               <h3 className="font-semibold text-gray-800">{cast.nazov}</h3>
-              <p className="text-sm text-gray-500">{cast.dielce.length} dielcov</p>
+              <p className="text-sm text-gray-500">
+                {filtrovane.length} z {cast.dielce.length} dielcov
+                {maAktivnyFilter && (
+                  <button
+                    onClick={resetFiltre}
+                    className="ml-2 text-xs text-blue-500 hover:underline"
+                  >
+                    zrušiť filter
+                  </button>
+                )}
+              </p>
             </div>
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
@@ -167,29 +189,6 @@ export default function DetailCasti({ etapa, onSpat, nacitajData }) {
             </div>
           </div>
 
-          {/* Filter */}
-          <div className="flex items-center gap-2 px-4 py-3 border-b bg-gray-50">
-            <span className="text-xs text-gray-500 font-medium">Zobraziť:</span>
-            {FILTRE.map(f => (
-              <button
-                key={f.key}
-                onClick={() => setFilter(f.key)}
-                className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
-                  filter === f.key
-                    ? 'bg-gray-800 text-white'
-                    : 'bg-white border border-gray-200 text-gray-600 hover:border-gray-400'
-                }`}
-              >
-                {f.label}
-                {f.key === 'hotove' && <span className="ml-1 opacity-70">({pocetHotovych})</span>}
-                {f.key === 'nehotove' && <span className="ml-1 opacity-70">({pocetNehotovych})</span>}
-              </button>
-            ))}
-            <span className="ml-auto text-xs text-gray-400">
-              {filtrovane.length} z {cast.dielce.length}
-            </span>
-          </div>
-
           {/* Tabuľka */}
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -198,20 +197,41 @@ export default function DetailCasti({ etapa, onSpat, nacitajData }) {
                   <th className="text-left px-4 py-2 text-gray-500 font-medium text-xs">Č. dielca</th>
                   <th className="text-left px-4 py-2 text-gray-500 font-medium text-xs">Názov</th>
                   <th className="text-right px-4 py-2 text-gray-500 font-medium text-xs">Počet</th>
-                  {FAZY.map(f => (
-                    <th key={f.pole} className="text-center px-3 py-2 min-w-24">
-                      <div className={`text-xs font-medium ${f.farba} mb-1.5`}>{f.label}</div>
-                      <div className="flex items-center justify-center gap-1">
-                        <div className="w-10 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-green-400 rounded-full transition-all"
-                            style={{ width: `${progresFazy(cast, f.pole)}%` }}
-                          />
+                  {FAZY.map(f => {
+                    const stavFiltra = filtre[f.pole] ?? null;
+                    const p = progresFazy(cast, f.pole);
+                    return (
+                      <th key={f.pole} className="text-center px-3 py-2 min-w-24">
+                        {/* Kliknuteľný názov fázy = filter */}
+                        <button
+                          onClick={() => handleFilterFazy(f.pole)}
+                          className={`text-xs font-medium mb-1.5 px-2 py-0.5 rounded-full transition-all ${
+                            stavFiltra === null
+                              ? `${f.farba} hover:bg-gray-100`
+                              : stavFiltra === 'nehotove'
+                              ? 'bg-red-100 text-red-600'
+                              : 'bg-green-100 text-green-600'
+                          }`}
+                          title="Klikni pre filtrovanie"
+                        >
+                          {f.label}
+                          {stavFiltra && (
+                            <span className="ml-1 font-bold">{labelFiltra(stavFiltra)}</span>
+                          )}
+                        </button>
+                        {/* Progres bar */}
+                        <div className="flex items-center justify-center gap-1">
+                          <div className="w-10 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-green-400 rounded-full transition-all"
+                              style={{ width: `${p}%` }}
+                            />
+                          </div>
+                          <span className="text-xs text-gray-500">{p}%</span>
                         </div>
-                        <span className="text-xs text-gray-500">{progresFazy(cast, f.pole)}%</span>
-                      </div>
-                    </th>
-                  ))}
+                      </th>
+                    );
+                  })}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
