@@ -33,7 +33,8 @@ export default function DetailEtapy({
   onImportExcel,
   vypocitajPracovneDni,
   generateKalendar,
-  nacitajData
+  nacitajData,
+  onDetailCasti
 }) {
   const dniVyroba = vypocitajPracovneDni(aktualnaEtapa.datumVyrobyOd, aktualnaEtapa.datumVyrobyDo);
   const dniPovrch = vypocitajPracovneDni(aktualnaEtapa.datumPovrchovejUpravyOd, aktualnaEtapa.datumPovrchovejUpravyDo);
