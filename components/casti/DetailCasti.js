@@ -1,21 +1,28 @@
 'use client'
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Trash2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { nacitajCastiEtapy, aktualizujStavDielcaCasti, vymazCast } from '../../lib/api/casti';
 
 const FAZY = [
-  { pole: 'poskladane',      label: 'Poskladané',       farba: 'text-blue-600' },
-  { pole: 'zvarene',         label: 'Zvarené',          farba: 'text-orange-600' },
-  { pole: 'povrchova_uprava',label: 'Povrch. úprava',   farba: 'text-purple-600' },
-  { pole: 'vyvezene',        label: 'Vyvezené',         farba: 'text-yellow-600' },
-  { pole: 'namontovane',     label: 'Namontované',      farba: 'text-green-600' },
+  { pole: 'poskladane',       label: 'Poskladané',     farba: 'text-blue-600',   },
+  { pole: 'zvarene',          label: 'Zvarené',        farba: 'text-orange-600', },
+  { pole: 'povrchova_uprava', label: 'Povrch. úprava', farba: 'text-purple-600', },
+  { pole: 'vyvezene',         label: 'Vyvezené',       farba: 'text-yellow-600', },
+  { pole: 'namontovane',      label: 'Namontované',    farba: 'text-green-600',  },
+];
+
+const FILTRE = [
+  { key: 'vsetky',   label: 'Všetky' },
+  { key: 'hotove',   label: 'Hotové' },
+  { key: 'nehotove', label: 'Nehotové' },
 ];
 
 export default function DetailCasti({ etapa, onSpat, nacitajData }) {
   const [casti, setCasti] = useState([]);
   const [aktivnaCast, setAktivnaCast] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [ukladam, setUkladam] = useState(null); // id dielecCasti ktorý sa práve ukladá
+  const [ukladam, setUkladam] = useState(null);
+  const [filter, setFilter] = useState('vsetky');
 
   useEffect(() => {
     nacitaj();
@@ -26,9 +33,7 @@ export default function DetailCasti({ etapa, onSpat, nacitajData }) {
     try {
       const data = await nacitajCastiEtapy(etapa.id);
       setCasti(data);
-      if (data.length > 0 && !aktivnaCast) {
-        setAktivnaCast(data[0].id);
-      }
+      if (data.length > 0 && !aktivnaCast) setAktivnaCast(data[0].id);
     } finally {
       setLoading(false);
     }
@@ -38,13 +43,10 @@ export default function DetailCasti({ etapa, onSpat, nacitajData }) {
     setUkladam(`${dielecCastiId}-${pole}`);
     try {
       await aktualizujStavDielcaCasti(dielecCastiId, pole, !aktualnaHodnota);
-      // Aktualizuj lokálny stav bez reloadu
       setCasti(prev => prev.map(cast => ({
         ...cast,
         dielce: cast.dielce.map(dc =>
-          dc.id === dielecCastiId
-            ? { ...dc, [pole]: !aktualnaHodnota }
-            : dc
+          dc.id === dielecCastiId ? { ...dc, [pole]: !aktualnaHodnota } : dc
         )
       })));
     } catch (err) {
@@ -65,13 +67,17 @@ export default function DetailCasti({ etapa, onSpat, nacitajData }) {
     }
   }
 
-  function progres(cast) {
+  function progresCasti(cast) {
     const total = cast.dielce.length * FAZY.length;
     if (total === 0) return 0;
-    const hotove = cast.dielce.reduce((sum, dc) =>
-      sum + FAZY.filter(f => dc[f.pole]).length, 0
-    );
+    const hotove = cast.dielce.reduce((sum, dc) => sum + FAZY.filter(f => dc[f.pole]).length, 0);
     return Math.round((hotove / total) * 100);
+  }
+
+  function progresFazy(cast, pole) {
+    if (cast.dielce.length === 0) return 0;
+    const hotove = cast.dielce.filter(dc => dc[pole]).length;
+    return Math.round((hotove / cast.dielce.length) * 100);
   }
 
   if (loading) return <p className="text-gray-400 py-8 text-center">Načítavam...</p>;
@@ -87,17 +93,35 @@ export default function DetailCasti({ etapa, onSpat, nacitajData }) {
 
   const cast = casti.find(c => c.id === aktivnaCast) || casti[0];
 
+  // Zoradenie podľa čísla dielca
+  const zoradene = [...(cast?.dielce || [])].sort((a, b) => {
+    const A = a.dielce?.cislo_dielca || a.dielce?.nazov || '';
+    const B = b.dielce?.cislo_dielca || b.dielce?.nazov || '';
+    return A.localeCompare(B, undefined, { numeric: true });
+  });
+
+  // Filtrovanie
+  const filtrovane = zoradene.filter(dc => {
+    const vsetkyHotove = FAZY.every(f => dc[f.pole]);
+    if (filter === 'hotove') return vsetkyHotove;
+    if (filter === 'nehotove') return !vsetkyHotove;
+    return true;
+  });
+
+  const pocetHotovych = zoradene.filter(dc => FAZY.every(f => dc[f.pole])).length;
+  const pocetNehotovych = zoradene.length - pocetHotovych;
+
   return (
     <div className="space-y-4">
 
-      {/* TABS — výber časti */}
+      {/* TABS */}
       <div className="flex gap-2 flex-wrap">
         {casti.map(c => {
-          const p = progres(c);
+          const p = progresCasti(c);
           return (
             <button
               key={c.id}
-              onClick={() => setAktivnaCast(c.id)}
+              onClick={() => { setAktivnaCast(c.id); setFilter('vsetky'); }}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-all ${
                 c.id === aktivnaCast
                   ? 'bg-purple-600 text-white border-purple-600'
@@ -115,26 +139,24 @@ export default function DetailCasti({ etapa, onSpat, nacitajData }) {
         })}
       </div>
 
-      {/* DETAIL AKTÍVNEJ ČASTI */}
       {cast && (
         <div className="bg-white rounded-lg shadow">
 
-          {/* Header časti */}
+          {/* Header */}
           <div className="flex items-center justify-between p-4 border-b">
             <div>
               <h3 className="font-semibold text-gray-800">{cast.nazov}</h3>
               <p className="text-sm text-gray-500">{cast.dielce.length} dielcov</p>
             </div>
             <div className="flex items-center gap-3">
-              {/* Progres bar */}
               <div className="flex items-center gap-2">
                 <div className="w-32 h-2 bg-gray-100 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-green-500 rounded-full transition-all"
-                    style={{ width: `${progres(cast)}%` }}
+                    style={{ width: `${progresCasti(cast)}%` }}
                   />
                 </div>
-                <span className="text-sm font-medium text-gray-600">{progres(cast)}%</span>
+                <span className="text-sm font-medium text-gray-600">{progresCasti(cast)}%</span>
               </div>
               <button
                 onClick={() => handleVymazCast(cast.id)}
@@ -145,23 +167,61 @@ export default function DetailCasti({ etapa, onSpat, nacitajData }) {
             </div>
           </div>
 
-          {/* Tabuľka dielcov s checkboxmi */}
+          {/* Filter */}
+          <div className="flex items-center gap-2 px-4 py-3 border-b bg-gray-50">
+            <span className="text-xs text-gray-500 font-medium">Zobraziť:</span>
+            {FILTRE.map(f => (
+              <button
+                key={f.key}
+                onClick={() => setFilter(f.key)}
+                className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                  filter === f.key
+                    ? 'bg-gray-800 text-white'
+                    : 'bg-white border border-gray-200 text-gray-600 hover:border-gray-400'
+                }`}
+              >
+                {f.label}
+                {f.key === 'hotove' && <span className="ml-1 opacity-70">({pocetHotovych})</span>}
+                {f.key === 'nehotove' && <span className="ml-1 opacity-70">({pocetNehotovych})</span>}
+              </button>
+            ))}
+            <span className="ml-auto text-xs text-gray-400">
+              {filtrovane.length} z {cast.dielce.length}
+            </span>
+          </div>
+
+          {/* Tabuľka */}
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-gray-50">
-                  <th className="text-left px-4 py-3 text-gray-500 font-medium">Č. dielca</th>
-                  <th className="text-left px-4 py-3 text-gray-500 font-medium">Názov</th>
-                  <th className="text-right px-4 py-3 text-gray-500 font-medium">Počet</th>
+                  <th className="text-left px-4 py-2 text-gray-500 font-medium text-xs">Č. dielca</th>
+                  <th className="text-left px-4 py-2 text-gray-500 font-medium text-xs">Názov</th>
+                  <th className="text-right px-4 py-2 text-gray-500 font-medium text-xs">Počet</th>
                   {FAZY.map(f => (
-                    <th key={f.pole} className={`text-center px-3 py-3 font-medium text-xs ${f.farba}`}>
-                      {f.label}
+                    <th key={f.pole} className="text-center px-3 py-2 min-w-24">
+                      <div className={`text-xs font-medium ${f.farba} mb-1.5`}>{f.label}</div>
+                      <div className="flex items-center justify-center gap-1">
+                        <div className="w-10 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-green-400 rounded-full transition-all"
+                            style={{ width: `${progresFazy(cast, f.pole)}%` }}
+                          />
+                        </div>
+                        <span className="text-xs text-gray-500">{progresFazy(cast, f.pole)}%</span>
+                      </div>
                     </th>
                   ))}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {cast.dielce.map(dc => {
+                {filtrovane.length === 0 ? (
+                  <tr>
+                    <td colSpan={3 + FAZY.length} className="text-center py-8 text-gray-400 text-sm">
+                      Žiadne dielce pre tento filter
+                    </td>
+                  </tr>
+                ) : filtrovane.map(dc => {
                   const d = dc.dielce;
                   const vsetkyHotove = FAZY.every(f => dc[f.pole]);
 
@@ -175,9 +235,7 @@ export default function DetailCasti({ etapa, onSpat, nacitajData }) {
                       </td>
                       <td className="px-4 py-3 text-gray-800">
                         {d?.nazov || '—'}
-                        {d?.profil && (
-                          <span className="ml-2 text-xs text-gray-400">{d.profil}</span>
-                        )}
+                        {d?.profil && <span className="ml-2 text-xs text-gray-400">{d.profil}</span>}
                       </td>
                       <td className="px-4 py-3 text-right font-medium text-gray-700">
                         {dc.mnozstvo}
@@ -196,7 +254,7 @@ export default function DetailCasti({ etapa, onSpat, nacitajData }) {
                                 jeUkladam
                                   ? 'opacity-50 cursor-wait border-gray-300'
                                   : jeZaskrtnuty
-                                  ? 'bg-green-500 border-green-500 text-white'
+                                  ? 'bg-green-500 border-green-500'
                                   : 'border-gray-300 hover:border-green-400'
                               }`}
                             >
