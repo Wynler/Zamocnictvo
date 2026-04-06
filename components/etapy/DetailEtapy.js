@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react';
-import { ArrowLeft, Pencil, Plus, Trash2, Upload, X, Scissors } from 'lucide-react';
+import { ArrowLeft, Pencil, Plus, Trash2, Upload, X, Scissors, LayoutList } from 'lucide-react';
 import ImportModal from '../import/ImportModal';
 import RozdelitEtapuModal from '../casti/RozdelitEtapuModal';
 import PrehladCasti from '../casti/PrehladCasti';
@@ -84,6 +84,16 @@ export default function DetailEtapy({
                 <Scissors size={16} />
                 Rozdeliť etapu
               </button>
+
+            <button
+              onClick={onDetailCasti}
+              className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+            >
+              <LayoutList size={16} />
+              Časti
+            </button>
+          
+                  
             </div>
           </div>
 
