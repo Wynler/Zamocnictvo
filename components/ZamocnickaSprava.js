@@ -14,6 +14,7 @@ import NovaZakazka from './zakazky/NovaZakazka';
 import DetailZakazky from './zakazky/DetailZakazky';
 import NovaEtapa from './etapy/NovaEtapa';
 import DetailEtapy from './etapy/DetailEtapy';
+import DetailCasti from './casti/DetailCasti';
 
 export default function ZamocnickaSprava() {
   // STATE
@@ -41,12 +42,12 @@ export default function ZamocnickaSprava() {
   
   // FORMS
   const [novaZakazka, setNovaZakazka] = useState({
-    nazov: '',  cisloZakazky: '', zakaznik: '', kontaktnaOsoba: '', telefon: '', email: '',
+    nazov: '', cisloZakazky: '', zakaznik: '', kontaktnaOsoba: '', telefon: '', email: '',
     nazovFirmy: '', ico: '', dic: '', adresa: '', stav: 'priprava'
   });
   
   const [novaEtapa, setNovaEtapa] = useState({
-    nazov: '',  cisloZakazky: '', kontaktnaOsoba: '', telefon: '', email: '', hmotnostPodlaVykazu: '',
+    nazov: '', cisloZakazky: '', kontaktnaOsoba: '', telefon: '', email: '', hmotnostPodlaVykazu: '',
     datumUkoncenia: '', datumVyrobyOd: '', datumVyrobyDo: '',
     datumPovrchovejUpravyOd: '', datumPovrchovejUpravyDo: '',
     datumMontazeOd: '', datumMontazeDo: '',
@@ -73,7 +74,7 @@ export default function ZamocnickaSprava() {
     'dokoncene': { label: 'Dokončené', farba: 'bg-green-100 text-green-700' }
   };
 
-  // INIT - Load data on mount
+  // INIT
   useEffect(() => {
     nacitajData();
   }, []);
@@ -92,18 +93,31 @@ export default function ZamocnickaSprava() {
     }
   };
 
+  // Helper — po nacitajData() aktualizuje aj lokálne stavy zákazky a etapy
+  const syncAktualneStavy = async () => {
+    const data = await nacitajZakazky();
+    setZakazky(data);
+    if (aktualnaZakazka) {
+      const z = data.find(z => z.id === aktualnaZakazka.id);
+      if (z) setAktualnaZakazka(z);
+      if (aktualnaEtapa && z) {
+        const e = z.etapy.find(e => e.id === aktualnaEtapa.id);
+        if (e) setAktualnaEtapa(e);
+      }
+    }
+  };
+
   const handlePridatZakazku = async () => {
     if (!novaZakazka.nazov || !novaZakazka.zakaznik) {
       alert('Vyplň povinné polia (Názov a Zákazník)');
       return;
     }
-    
     try {
       await pridajZakazku(novaZakazka);
       await nacitajData();
       setZobrazenie('zoznam');
       setNovaZakazka({
-        nazov: '', cisloZakazky: '', cisloZakazky: '', zakaznik: '', kontaktnaOsoba: '', telefon: '', email: '',
+        nazov: '', cisloZakazky: '', zakaznik: '', kontaktnaOsoba: '', telefon: '', email: '',
         nazovFirmy: '', ico: '', dic: '', adresa: '', stav: 'priprava'
       });
     } catch (error) {
@@ -113,7 +127,6 @@ export default function ZamocnickaSprava() {
 
   const handleVymazat = async () => {
     if (!zakazkaToDelete) return;
-    
     try {
       await vymazZakazku(zakazkaToDelete.id);
       await nacitajData();
@@ -127,9 +140,7 @@ export default function ZamocnickaSprava() {
   const handleUlozitZakazku = async () => {
     try {
       await aktualizujZakazku(aktualnaZakazka.id, editovanaZakazka);
-      await nacitajData();
-      const aktualizovanaZakazka = zakazky.find(z => z.id === aktualnaZakazka.id);
-      setAktualnaZakazka(aktualizovanaZakazka);
+      await syncAktualneStavy();
       setEditujemZakazku(false);
       setEditovanaZakazka(null);
     } catch (error) {
@@ -140,9 +151,7 @@ export default function ZamocnickaSprava() {
   const handleZmenitStavZakazky = async (novyStav) => {
     try {
       await zmenStavZakazky(aktualnaZakazka.id, novyStav);
-      await nacitajData();
-      const aktualizovanaZakazka = zakazky.find(z => z.id === aktualnaZakazka.id);
-      setAktualnaZakazka(aktualizovanaZakazka);
+      await syncAktualneStavy();
     } catch (error) {
       alert('Chyba pri zmene stavu: ' + error.message);
     }
@@ -153,15 +162,12 @@ export default function ZamocnickaSprava() {
       alert('Vyplň názov etapy');
       return;
     }
-    
     try {
       await pridajEtapu(aktualnaZakazka.id, novaEtapa);
-      await nacitajData();
-      const aktualizovanaZakazka = zakazky.find(z => z.id === aktualnaZakazka.id);
-      setAktualnaZakazka(aktualizovanaZakazka);
+      await syncAktualneStavy();
       setZobrazenie('detail');
       setNovaEtapa({
-        nazov: '',  cisloZakazky: '',kontaktnaOsoba: '', telefon: '', email: '', hmotnostPodlaVykazu: '',
+        nazov: '', cisloZakazky: '', kontaktnaOsoba: '', telefon: '', email: '', hmotnostPodlaVykazu: '',
         datumUkoncenia: '', datumVyrobyOd: '', datumVyrobyDo: '',
         datumPovrchovejUpravyOd: '', datumPovrchovejUpravyDo: '',
         datumMontazeOd: '', datumMontazeDo: '',
@@ -175,11 +181,7 @@ export default function ZamocnickaSprava() {
   const handleUlozitEtapu = async () => {
     try {
       await aktualizujEtapu(aktualnaEtapa.id, editovanaEtapa);
-      await nacitajData();
-      const aktualizovanaZakazka = zakazky.find(z => z.id === aktualnaZakazka.id);
-      const aktualizovanaEtapa = aktualizovanaZakazka.etapy.find(e => e.id === aktualnaEtapa.id);
-      setAktualnaZakazka(aktualizovanaZakazka);
-      setAktualnaEtapa(aktualizovanaEtapa);
+      await syncAktualneStavy();
       setEditujemEtapu(false);
       setEditovanaEtapa(null);
     } catch (error) {
@@ -190,11 +192,7 @@ export default function ZamocnickaSprava() {
   const handleZmenitStavEtapy = async (novyStav) => {
     try {
       await zmenStavEtapy(aktualnaEtapa.id, novyStav);
-      await nacitajData();
-      const aktualizovanaZakazka = zakazky.find(z => z.id === aktualnaZakazka.id);
-      const aktualizovanaEtapa = aktualizovanaZakazka.etapy.find(e => e.id === aktualnaEtapa.id);
-      setAktualnaZakazka(aktualizovanaZakazka);
-      setAktualnaEtapa(aktualizovanaEtapa);
+      await syncAktualneStavy();
     } catch (error) {
       alert('Chyba pri zmene stavu etapy: ' + error.message);
     }
@@ -205,14 +203,9 @@ export default function ZamocnickaSprava() {
       alert('Vyplň názov a množstvo');
       return;
     }
-    
     try {
       await pridajDielec(aktualnaEtapa.id, novyDielec);
-      await nacitajData();
-      const aktualizovanaZakazka = zakazky.find(z => z.id === aktualnaZakazka.id);
-      const aktualizovanaEtapa = aktualizovanaZakazka.etapy.find(e => e.id === aktualnaEtapa.id);
-      setAktualnaZakazka(aktualizovanaZakazka);
-      setAktualnaEtapa(aktualizovanaEtapa);
+      await syncAktualneStavy();
       setNovyDielec({ nazov: '', mnozstvo: '', jednotka: 'm', poznamka: '' });
     } catch (error) {
       alert('Chyba pri pridávaní dielca: ' + error.message);
@@ -222,11 +215,7 @@ export default function ZamocnickaSprava() {
   const handleUlozitDielec = async () => {
     try {
       await aktualizujDielec(editovanyDielec.id, editovanyDielec);
-      await nacitajData();
-      const aktualizovanaZakazka = zakazky.find(z => z.id === aktualnaZakazka.id);
-      const aktualizovanaEtapa = aktualizovanaZakazka.etapy.find(e => e.id === aktualnaEtapa.id);
-      setAktualnaZakazka(aktualizovanaZakazka);
-      setAktualnaEtapa(aktualizovanaEtapa);
+      await syncAktualneStavy();
       setEditujemDielec(false);
       setEditovanyDielec(null);
     } catch (error) {
@@ -236,14 +225,9 @@ export default function ZamocnickaSprava() {
 
   const handleVymazatDielec = async (dielecId) => {
     if (!confirm('Naozaj vymazať dielec?')) return;
-    
     try {
       await vymazDielec(dielecId);
-      await nacitajData();
-      const aktualizovanaZakazka = zakazky.find(z => z.id === aktualnaZakazka.id);
-      const aktualizovanaEtapa = aktualizovanaZakazka.etapy.find(e => e.id === aktualnaEtapa.id);
-      setAktualnaZakazka(aktualizovanaZakazka);
-      setAktualnaEtapa(aktualizovanaEtapa);
+      await syncAktualneStavy();
     } catch (error) {
       alert('Chyba pri vymazávaní dielca: ' + error.message);
     }
@@ -259,17 +243,14 @@ export default function ZamocnickaSprava() {
 
       const data = await file.arrayBuffer();
       const XLSX = await import('xlsx');
-
       const workbook = XLSX.read(data, { type: 'array' });
       const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
       const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: '' });
 
       let importedCount = 0;
-      
       for (let i = 1; i < jsonData.length; i++) {
         const row = jsonData[i];
         if (!row[0]) continue;
-
         const dielec = {
           nazov: String(row[0] || ''),
           hmotnostJednehoKs: row[1] ? parseFloat(row[1]) : null,
@@ -277,18 +258,12 @@ export default function ZamocnickaSprava() {
           jednotka: String(row[3] || 'm'),
           poznamka: String(row[4] || '')
         };
-
         await pridajDielec(aktualnaEtapa.id, dielec);
         importedCount++;
       }
 
       setImportStatus(`✓ Importované ${importedCount} dielcov`);
-      await nacitajData();
-      const aktualizovanaZakazka = zakazky.find(z => z.id === aktualnaZakazka.id);
-      const aktualizovanaEtapa = aktualizovanaZakazka.etapy.find(e => e.id === aktualnaEtapa.id);
-      setAktualnaZakazka(aktualizovanaZakazka);
-      setAktualnaEtapa(aktualizovanaEtapa);
-
+      await syncAktualneStavy();
       setTimeout(() => setShowImportStatus(false), 3000);
     } catch (error) {
       setImportStatus('❌ Chyba pri importe: ' + error.message);
@@ -301,72 +276,39 @@ export default function ZamocnickaSprava() {
   // HELPER FUNCTIONS
   const vypocitajPracovneDni = (datumOd, datumDo) => {
     if (!datumOd || !datumDo) return null;
-    
     const start = new Date(datumOd);
     const end = new Date(datumDo);
     let pocetDni = 0;
     let aktualnyDatum = new Date(start);
-    
     while (aktualnyDatum <= end) {
       const denVTyzdni = aktualnyDatum.getDay();
       if (denVTyzdni !== 0 && denVTyzdni !== 6) pocetDni++;
       aktualnyDatum.setDate(aktualnyDatum.getDate() + 1);
     }
-    
     return pocetDni;
   };
 
   const generateKalendar = (etapa) => {
     const udalosti = [];
-    
     if (etapa.datumVyrobyOd && etapa.datumVyrobyDo) {
-      udalosti.push({
-        datum: etapa.datumVyrobyOd,
-        typ: 'vyroba',
-        popis: `Začiatok výroby`
-      });
-      udalosti.push({
-        datum: etapa.datumVyrobyDo,
-        typ: 'vyroba',
-        popis: `Koniec výroby`
-      });
+      udalosti.push({ datum: etapa.datumVyrobyOd, typ: 'vyroba', popis: 'Začiatok výroby' });
+      udalosti.push({ datum: etapa.datumVyrobyDo, typ: 'vyroba', popis: 'Koniec výroby' });
     }
-    
     if (etapa.datumPovrchovejUpravyOd && etapa.datumPovrchovejUpravyDo) {
-      udalosti.push({
-        datum: etapa.datumPovrchovejUpravyOd,
-        typ: 'povrch',
-        popis: `Začiatok povrchovej úpravy`
-      });
-      udalosti.push({
-        datum: etapa.datumPovrchovejUpravyDo,
-        typ: 'povrch',
-        popis: `Koniec povrchovej úpravy`
-      });
+      udalosti.push({ datum: etapa.datumPovrchovejUpravyOd, typ: 'povrch', popis: 'Začiatok povrchovej úpravy' });
+      udalosti.push({ datum: etapa.datumPovrchovejUpravyDo, typ: 'povrch', popis: 'Koniec povrchovej úpravy' });
     }
-    
     if (etapa.datumMontazeOd && etapa.datumMontazeDo) {
-      udalosti.push({
-        datum: etapa.datumMontazeOd,
-        typ: 'montaz',
-        popis: `Začiatok montáže`
-      });
-      udalosti.push({
-        datum: etapa.datumMontazeDo,
-        typ: 'montaz',
-        popis: `Koniec montáže`
-      });
+      udalosti.push({ datum: etapa.datumMontazeOd, typ: 'montaz', popis: 'Začiatok montáže' });
+      udalosti.push({ datum: etapa.datumMontazeDo, typ: 'montaz', popis: 'Koniec montáže' });
     }
-    
     return udalosti.sort((a, b) => new Date(a.datum) - new Date(b.datum));
   };
 
   // LOADING
-  if (loading) {
-    return <LoadingScreen />;
-  }
+  if (loading) return <LoadingScreen />;
 
-  // ROUTING - which component to show
+  // ROUTING
   if (zobrazenie === 'zoznam') {
     return (
       <ZoznamZakaziek
@@ -495,7 +437,42 @@ export default function ZamocnickaSprava() {
         onImportExcel={handleImportExcel}
         vypocitajPracovneDni={vypocitajPracovneDni}
         generateKalendar={generateKalendar}
+        nacitajData={syncAktualneStavy}
+        onDetailCasti={() => setZobrazenie('detail-casti')}
       />
+    );
+  }
+
+  if (zobrazenie === 'detail-casti' && aktualnaEtapa) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="max-w-7xl mx-auto">
+
+          {/* Breadcrumb navigácia */}
+          <div className="flex items-center gap-2 text-sm text-gray-500 mb-6">
+            <button onClick={() => setZobrazenie('zoznam')} className="hover:text-blue-600">
+              Zákazky
+            </button>
+            <span>/</span>
+            <button onClick={() => setZobrazenie('detail')} className="hover:text-blue-600">
+              {aktualnaZakazka?.nazov}
+            </button>
+            <span>/</span>
+            <button onClick={() => setZobrazenie('detail-etapy')} className="hover:text-blue-600">
+              {aktualnaEtapa?.nazov}
+            </button>
+            <span>/</span>
+            <span className="text-gray-800 font-medium">Časti</span>
+          </div>
+
+          <DetailCasti
+            etapa={aktualnaEtapa}
+            onSpat={() => setZobrazenie('detail-etapy')}
+            nacitajData={syncAktualneStavy}
+          />
+
+        </div>
+      </div>
     );
   }
 
