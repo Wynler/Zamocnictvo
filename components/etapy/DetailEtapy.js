@@ -68,23 +68,23 @@ export default function DetailEtapy({
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold text-gray-800">
               Dielce ({aktualnaEtapa.dielce?.length || 0})
-              </h2>
-            <button
-              onClick={() => setShowImport(true)}
-              className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
-            >
-              <Upload size={16} />
-              Import Excel
-            </button>
-
-          <button
+            </h2>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowImport(true)}
+                className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
+              >
+                <Upload size={16} />
+                Import Excel
+              </button>
+              <button
                 onClick={() => setShowRozdelit(true)}
-                 className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
-          >
-              <Scissors size={16} />
+                className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
+              >
+                <Scissors size={16} />
                 Rozdeliť etapu
-            </button>
-                
+              </button>
+            </div>
           </div>
 
           {/* PRIDAŤ DIELEC FORM */}
@@ -131,10 +131,9 @@ export default function DetailEtapy({
             </div>
           </div>
 
-          // PrehladCasti nad tabuľkou dielcov
-<PrehladCasti etapa={aktualnaEtapa} />
+          {/* PREHĽAD ČASTÍ */}
+          <PrehladCasti etapa={aktualnaEtapa} />
 
-                  
           {/* TABLE */}
           {aktualnaEtapa.dielce && aktualnaEtapa.dielce.length > 0 ? (
             <div className="overflow-x-auto">
@@ -281,21 +280,21 @@ export default function DetailEtapy({
           </div>
         )}
 
-        {/* IMPORT MODAL */}
+        {/* MODALY */}
         {showImport && (
           <ImportModal
             etapaId={aktualnaEtapa.id}
             onClose={() => setShowImport(false)}
             onSuccess={() => { setShowImport(false); nacitajData(); }}
           />
+        )}
 
-      {showRozdelit && (
-  <RozdelitEtapuModal
-    etapa={aktualnaEtapa}
-    onClose={() => setShowRozdelit(false)}
-    onSuccess={() => { setShowRozdelit(false); nacitajData(); }}
-  />
-
+        {showRozdelit && (
+          <RozdelitEtapuModal
+            etapa={aktualnaEtapa}
+            onClose={() => setShowRozdelit(false)}
+            onSuccess={() => { setShowRozdelit(false); nacitajData(); }}
+          />
         )}
 
       </div>
