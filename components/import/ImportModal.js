@@ -4,15 +4,15 @@ import { Upload, X, FileSpreadsheet, CheckCircle, AlertCircle } from 'lucide-rea
 import { importujVykazDielcov, importujKusovnik } from '../../lib/api/import';
 
 export default function ImportModal({ etapaId, onClose, onSuccess }) {
-  const [typ, setTyp] = useState(null); // 'dielce' | 'kusovnik'
+  const [typ, setTyp] = useState(null);
   const [file, setFile] = useState(null);
-  const [stav, setStav] = useState('idle'); // 'idle' | 'loading' | 'success' | 'error'
+  const [stav, setStav] = useState('idle');
   const [sprava, setSprava] = useState('');
 
   const handleImport = async () => {
     if (!file || !typ) return;
     setStav('loading');
-    
+
     try {
       if (typ === 'dielce') {
         const pocet = await importujVykazDielcov(file, etapaId);
@@ -32,7 +32,7 @@ export default function ImportModal({ etapaId, onClose, onSuccess }) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md">
-        
+
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-bold text-gray-800">Import z Excelu</h2>
@@ -90,18 +90,23 @@ export default function ImportModal({ etapaId, onClose, onSuccess }) {
         {/* Stav */}
         {stav === 'success' && (
           <div className="mt-4 flex items-center gap-2 text-green-700 bg-green-50 rounded-lg p-3">
-            <CheckCircle size={18} /> <span className="text-sm">{sprava}</span>
+            <CheckCircle size={18} />
+            <span className="text-sm">{sprava}</span>
           </div>
         )}
         {stav === 'error' && (
           <div className="mt-4 flex items-center gap-2 text-red-700 bg-red-50 rounded-lg p-3">
-            <AlertCircle size={18} /> <span className="text-sm">{sprava}</span>
+            <AlertCircle size={18} />
+            <span className="text-sm">{sprava}</span>
           </div>
         )}
 
         {/* Tlačidlá */}
         <div className="flex gap-3 mt-5">
-          <button onClick={onClose} className="flex-1 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+          <button
+            onClick={onClose}
+            className="flex-1 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+          >
             Zrušiť
           </button>
           <button
