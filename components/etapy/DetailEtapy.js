@@ -1,7 +1,9 @@
 'use client'
 import { useState } from 'react';
-import { ArrowLeft, Pencil, Plus, Trash2, Upload, X } from 'lucide-react';
+import { ArrowLeft, Pencil, Plus, Trash2, Upload, X, Scissors } from 'lucide-react';
 import ImportModal from '../import/ImportModal';
+import RozdelitEtapuModal from '../casti/RozdelitEtapuModal';
+import PrehladCasti from '../casti/PrehladCasti';
 
 export default function DetailEtapy({
   aktualnaZakazka,
@@ -38,6 +40,7 @@ export default function DetailEtapy({
   const dniMontaz = vypocitajPracovneDni(aktualnaEtapa.datumMontazeOd, aktualnaEtapa.datumMontazeDo);
   const kalendar = generateKalendar(aktualnaEtapa);
   const [showImport, setShowImport] = useState(false);
+  const [showRozdelit, setShowRozdelit] = useState(false);
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -65,7 +68,7 @@ export default function DetailEtapy({
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold text-gray-800">
               Dielce ({aktualnaEtapa.dielce?.length || 0})
-            </h2>
+              </h2>
             <button
               onClick={() => setShowImport(true)}
               className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
@@ -73,6 +76,15 @@ export default function DetailEtapy({
               <Upload size={16} />
               Import Excel
             </button>
+
+          <button
+                onClick={() => setShowRozdelit(true)}
+                 className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
+          >
+              <Scissors size={16} />
+                Rozdeliť etapu
+            </button>
+                
           </div>
 
           {/* PRIDAŤ DIELEC FORM */}
@@ -119,6 +131,10 @@ export default function DetailEtapy({
             </div>
           </div>
 
+          // PrehladCasti nad tabuľkou dielcov
+<PrehladCasti etapa={aktualnaEtapa} />
+
+                  
           {/* TABLE */}
           {aktualnaEtapa.dielce && aktualnaEtapa.dielce.length > 0 ? (
             <div className="overflow-x-auto">
@@ -272,6 +288,14 @@ export default function DetailEtapy({
             onClose={() => setShowImport(false)}
             onSuccess={() => { setShowImport(false); nacitajData(); }}
           />
+
+      {showRozdelit && (
+  <RozdelitEtapuModal
+    etapa={aktualnaEtapa}
+    onClose={() => setShowRozdelit(false)}
+    onSuccess={() => { setShowRozdelit(false); nacitajData(); }}
+  />
+
         )}
 
       </div>
