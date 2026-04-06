@@ -5,8 +5,8 @@ import { vytvorCast, nacitajCastiEtapy, nacitajZaradenie } from '../../lib/api/c
 
 export default function RozdelitEtapuModal({ etapa, onClose, onSuccess }) {
   const [nazovCasti, setNazovCasti] = useState('');
-  const [vyber, setVyber] = useState({}); // { [dielec_id]: { zaskrtnute: bool, mnozstvo: number } }
-  const [zaradenie, setZaradenie] = useState({}); // koľko je už zaradených
+  const [vyber, setVyber] = useState({});
+  const [zaradenie, setZaradenie] = useState({});
   const [pocetCasti, setPocetCasti] = useState(0);
   const [stav, setStav] = useState('idle');
   const [chyba, setChyba] = useState('');
@@ -16,7 +16,6 @@ export default function RozdelitEtapuModal({ etapa, onClose, onSuccess }) {
   }, []);
 
   async function inicializuj() {
-    // Načítame existujúce časti a zaradenie
     const [casti, zaradenieData] = await Promise.all([
       nacitajCastiEtapy(etapa.id),
       nacitajZaradenie(etapa.id)
@@ -25,7 +24,6 @@ export default function RozdelitEtapuModal({ etapa, onClose, onSuccess }) {
     setPocetCasti(casti.length);
     setZaradenie(zaradenieData);
 
-    // Inicializujeme vyber — default množstvo = zostatok
     const init = {};
     for (const d of etapa.dielce || []) {
       const uzZaradene = zaradenieData[d.id] || 0;
@@ -58,27 +56,20 @@ export default function RozdelitEtapuModal({ etapa, onClose, onSuccess }) {
   }
 
   async function handleVytvorit() {
-    if (!nazovCasti.trim()) {
-      setChyba('Zadaj názov časti');
-      return;
-    }
+    if (!nazovCasti.trim()) { setChyba('Zadaj názov časti'); return; }
 
     const priradenia = Object.entries(vyber)
       .filter(([_, v]) => v.zaskrtnute && v.mnozstvo > 0)
       .map(([dielec_id, v]) => ({ dielec_id: Number(dielec_id), mnozstvo: v.mnozstvo }));
 
-    if (priradenia.length === 0) {
-      setChyba('Vyber aspoň jeden dielec');
-      return;
-    }
+    if (priradenia.length === 0) { setChyba('Vyber aspoň jeden dielec'); return; }
 
-    // Validácia — neprekročiť zostatok
     for (const p of priradenia) {
       const uzZaradene = zaradenie[p.dielec_id] || 0;
       const dielec = etapa.dielce.find(d => d.id === p.dielec_id);
       const maxZostatok = Number(dielec.mnozstvo) - uzZaradene;
       if (p.mnozstvo > maxZostatok) {
-        setChyba(`Dielec ${dielec.cislo_dielca || dielec.nazov}: zadané množstvo presahuje zostatok (${maxZostatok})`);
+        setChyba(`${dielec.cislo_dielca || dielec.nazov}: množstvo presahuje zostatok (${maxZostatok})`);
         return;
       }
     }
@@ -115,9 +106,7 @@ export default function RozdelitEtapuModal({ etapa, onClose, onSuccess }) {
 
         {/* Názov časti */}
         <div className="px-6 pt-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Názov novej časti
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Názov novej časti</label>
           <input
             type="text"
             value={nazovCasti}
@@ -148,10 +137,7 @@ export default function RozdelitEtapuModal({ etapa, onClose, onSuccess }) {
                 const jeNedostupny = zostatok <= 0;
 
                 return (
-                  <tr
-                    key={d.id}
-                    className={`${jeNedostupny ? 'opacity-40' : 'hover:bg-gray-50'}`}
-                  >
+                  <tr key={d.id} className={jeNedostupny ? 'opacity-40' : 'hover:bg-gray-50'}>
                     <td className="py-3">
                       <input
                         type="checkbox"
@@ -161,7 +147,7 @@ export default function RozdelitEtapuModal({ etapa, onClose, onSuccess }) {
                         className="w-4 h-4 rounded border-gray-300 text-blue-600"
                       />
                     </td>
-                    <td className="py-3 font-mono text-gray-600">{d.cislo_dielca || '—'}</td>
+                    <td className="py-3 font-mono text-gray-500 text-xs">{d.cislo_dielca || '—'}</td>
                     <td className="py-3 text-gray-800">{d.nazov || '—'}</td>
                     <td className="py-3 text-right text-gray-600">{d.mnozstvo}</td>
                     <td className="py-3 text-right">
@@ -193,17 +179,12 @@ export default function RozdelitEtapuModal({ etapa, onClose, onSuccess }) {
 
         {/* Chyba */}
         {chyba && (
-          <div className="mx-6 mb-2 px-3 py-2 bg-red-50 text-red-700 text-sm rounded-lg">
-            {chyba}
-          </div>
+          <div className="mx-6 mb-2 px-3 py-2 bg-red-50 text-red-700 text-sm rounded-lg">{chyba}</div>
         )}
 
         {/* Footer */}
         <div className="flex gap-3 p-6 border-t">
-          <button
-            onClick={onClose}
-            className="flex-1 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-          >
+          <button onClick={onClose} className="flex-1 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
             Zrušiť
           </button>
           <button
@@ -213,9 +194,7 @@ export default function RozdelitEtapuModal({ etapa, onClose, onSuccess }) {
           >
             {stav === 'success' ? (
               <><CheckCircle size={16} /> Vytvorené</>
-            ) : stav === 'loading' ? (
-              'Ukladám...'
-            ) : (
+            ) : stav === 'loading' ? 'Ukladám...' : (
               <><Plus size={16} /> Vytvoriť časť</>
             )}
           </button>
