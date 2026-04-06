@@ -62,40 +62,38 @@ export default function DetailEtapy({
         <button onClick={onSpat} className="flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-4">
           <ArrowLeft size={20} /> Späť na zákazku
         </button>
+       {/* DIELCE TABUĽKA */}
+       <div className="bg-white rounded-lg shadow p-6 mb-6">
+  <div className="flex justify-between items-center mb-4">
+    <h2 className="text-xl font-semibold text-gray-800">
+      Dielce ({aktualnaEtapa.dielce?.length || 0})
+    </h2>
+    <div className="flex gap-2">
+      <button
+        onClick={() => setShowImport(true)}
+        className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
+      >
+        <Upload size={16} />
+        Import Excel
+      </button>
+      <button
+        onClick={() => setShowRozdelit(true)}
+        className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
+      >
+        <Scissors size={16} />
+        Rozdeliť etapu
+      </button>
+      <button
+        onClick={onDetailCasti}
+        className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+      >
+        <LayoutList size={16} />
+        Časti
+      </button>
+    </div>
+  </div>
 
-        {/* DIELCE TABUĽKA */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold text-gray-800">
-              Dielce ({aktualnaEtapa.dielce?.length || 0})
-            </h2>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setShowImport(true)}
-                className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
-              >
-                <Upload size={16} />
-                Import Excel
-              </button>
-              <button
-                onClick={() => setShowRozdelit(true)}
-                className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
-              >
-                <Scissors size={16} />
-                Rozdeliť etapu
-              </button>
 
-            <button
-              onClick={onDetailCasti}
-              className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-            >
-              <LayoutList size={16} />
-              Časti
-            </button>
-          
-                  
-            </div>
-          </div>
 
           {/* PRIDAŤ DIELEC FORM */}
           <div className="bg-gray-50 rounded-lg p-4 mb-4">
