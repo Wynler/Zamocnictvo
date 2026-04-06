@@ -178,7 +178,7 @@ export default function DetailCasti({ etapa, onSpat, nacitajData }) {
           <div className="flex border-b">
             {[
               { key: 'dielce', label: 'Dielce' },
-              { key: 'material', label: 'Materiál' },
+              { key: 'material', label: 'Položky' },
             ].map(t => (
               <button
                 key={t.key}
