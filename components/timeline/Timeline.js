@@ -206,7 +206,7 @@ export default function Timeline({ onSpat }) {
                       <div style={{ width: LABEL_W, flexShrink: 0, fontSize: 12, fontWeight: 700, color: '#111827', textTransform: 'uppercase', letterSpacing: '0.06em', padding: '0 12px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} className="border-r border-gray-200">
                         {zakazka.nazov}
                       </div>
-                      <div className="flex-1 relative" style={{ height: ZAK_H }}>
+                      <div className="flex-1 relative" style={{ height: ZAK_H, overflow: 'hidden' }}>
                         <div style={{ position: 'absolute', left: `${todayP}%`, top: 0, bottom: 0, width: 2, background: '#111', opacity: 0.25 }} />
                         {zakStart && zakDeadline && (() => {
                           const sp = p(zakStart), dp = p(zakDeadline);
@@ -247,7 +247,7 @@ export default function Timeline({ onSpat }) {
                               {realPct}% · {etapa.pocet_ludi ? `${etapa.pocet_ludi} ľudí` : '—'}
                             </div>
                           </div>
-                          <div className="flex-1 relative" style={{ height: ROW_H }}>
+                          <div className="flex-1 relative" style={{ height: ROW_H, overflow: 'hidden' }}>
                             <div style={{ position: 'absolute', left: `${todayP}%`, top: 0, bottom: 0, width: 2, background: '#111', opacity: 0.4, zIndex: 8 }} />
                             {planW > 0 && <div style={{ position: 'absolute', left: `${startPP}%`, width: `${planW}%`, height: 10, top: '50%', transform: 'translateY(-50%)', borderRadius: 3, background: bgColor }} />}
                             {!notStarted && realPct > 0 && <div style={{ position: 'absolute', left: `${startPP}%`, width: `${realW}%`, height: 10, top: '50%', transform: 'translateY(-50%)', borderRadius: 3, background: barColor, zIndex: 3 }} />}
