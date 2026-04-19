@@ -51,7 +51,8 @@ export default function ZamocnickaSprava() {
     datumUkoncenia: '', datumVyrobyOd: '', datumVyrobyDo: '',
     datumPovrchovejUpravyOd: '', datumPovrchovejUpravyDo: '',
     datumMontazeOd: '', datumMontazeDo: '',
-    zinkovanie: 'nic', farba: 'nic', farbaTon: '', popis: '', stav: 'planovane'
+    zinkovanie: 'nic', farba: 'nic', farbaTon: '', popis: '', stav: 'planovane',
+datumZaciatku: '', deadline: '', clovekohod: '', pocetLudi: ''
   });
   
   const [novyDielec, setNovyDielec] = useState({
@@ -171,7 +172,8 @@ export default function ZamocnickaSprava() {
         datumUkoncenia: '', datumVyrobyOd: '', datumVyrobyDo: '',
         datumPovrchovejUpravyOd: '', datumPovrchovejUpravyDo: '',
         datumMontazeOd: '', datumMontazeDo: '',
-        zinkovanie: 'nic', farba: 'nic', farbaTon: '', popis: '', stav: 'planovane'
+        zinkovanie: 'nic', farba: 'nic', farbaTon: '', popis: '', stav: 'planovane',
+datumZaciatku: '', deadline: '', clovekohod: '', pocetLudi: ''
       });
     } catch (error) {
       alert('Chyba pri pridávaní etapy: ' + error.message);
