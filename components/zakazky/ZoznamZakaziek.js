@@ -1,3 +1,4 @@
+// v2
 import { Plus, BarChart2 } from 'lucide-react';
 import ZakazkaKarta from './ZakazkaKarta';
 
