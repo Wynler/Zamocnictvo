@@ -193,20 +193,6 @@ export default function DetailCasti({ etapa, onSpat, nacitajData }) {
               </p>
             </div>
             <div className="flex items-center gap-3">
-              {/* Tlačidlo Uložiť stav */}
-              {aktualnyTab === 'dielce' && (
-                <button
-                  onClick={handleUlozitStav}
-                  disabled={ukladamStav}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                    zmenene
-                      ? 'bg-blue-600 text-white hover:bg-blue-700'
-                      : 'bg-gray-100 text-gray-400 cursor-default'
-                  } disabled:opacity-50`}
-                >
-                  {ukladamStav ? 'Ukladám...' : 'Uložiť stav'}
-                </button>
-              )}
               <div className="flex items-center gap-2">
                 <div className="w-32 h-2 bg-gray-100 rounded-full overflow-hidden">
                   <div className="h-full bg-green-500 rounded-full transition-all" style={{ width: `${progresCasti(cast)}%` }} />
@@ -242,7 +228,7 @@ export default function DetailCasti({ etapa, onSpat, nacitajData }) {
           {/* TAB: Dielce */}
           {aktualnyTab === 'dielce' && (
             <>
-              {/* Filter */}
+              {/* Filter + Uložiť */}
               <div className="flex items-center gap-2 px-4 py-3 border-b bg-gray-50">
                 <span className="text-xs text-gray-500 font-medium">Filter:</span>
                 <span className="text-xs text-gray-400">klikni na názov fázy v hlavičke</span>
@@ -253,6 +239,20 @@ export default function DetailCasti({ etapa, onSpat, nacitajData }) {
                     <button onClick={resetFiltre} className="ml-1 text-xs text-blue-500 hover:underline">zrušiť</button>
                   </>
                 )}
+                <div className="ml-auto flex items-center gap-2">
+                  {zmenene && <span className="text-xs text-orange-500 font-medium">● neuložené zmeny</span>}
+                  <button
+                    onClick={handleUlozitStav}
+                    disabled={ukladamStav}
+                    className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                      zmenene
+                        ? 'bg-blue-600 text-white hover:bg-blue-700'
+                        : 'bg-gray-200 text-gray-400 cursor-default'
+                    } disabled:opacity-50`}
+                  >
+                    {ukladamStav ? 'Ukladám...' : 'Uložiť stav'}
+                  </button>
+                </div>
               </div>
 
               <div className="overflow-x-auto">
