@@ -63,6 +63,64 @@ export default function DetailEtapy({
         <button onClick={onSpat} className="flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-4">
           <ArrowLeft size={20} /> Späť na zákazku
         </button>
+
+        {/* TIMELINE BLOK */}
+        {(aktualnaEtapa.datumZaciatku || aktualnaEtapa.deadline || aktualnaEtapa.clovekohod) && (() => {
+          const hodiny = parseFloat(aktualnaEtapa.clovekohod) || 0;
+          const ludi = parseInt(aktualnaEtapa.pocetLudi) || 1;
+          const dni = hodiny > 0 ? Math.ceil(hodiny / (ludi * 8)) : null;
+          let datumKonca = null;
+          if (aktualnaEtapa.datumZaciatku && dni) {
+            const d = new Date(aktualnaEtapa.datumZaciatku);
+            d.setDate(d.getDate() + dni);
+            datumKonca = d.toISOString().split('T')[0];
+          }
+          const ok = datumKonca && aktualnaEtapa.deadline ? datumKonca <= aktualnaEtapa.deadline : null;
+          return (
+            <div className="bg-white rounded-lg shadow p-5 mb-6">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold text-gray-800 text-lg">{aktualnaEtapa.nazov}</h3>
+                {ok !== null && (
+                  <span className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium ${
+                    ok ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                  }`}>
+                    <span className={`w-2 h-2 rounded-full ${ok ? 'bg-green-500' : 'bg-red-500'}`} />
+                    {ok ? 'Stihnete deadline' : 'Nestihnete deadline'}
+                  </span>
+                )}
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {aktualnaEtapa.datumZaciatku && (
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">Začiatok</p>
+                    <p className="font-medium text-gray-800">{new Date(aktualnaEtapa.datumZaciatku).toLocaleDateString('sk-SK')}</p>
+                  </div>
+                )}
+                {aktualnaEtapa.deadline && (
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">Deadline</p>
+                    <p className="font-medium text-gray-800">{new Date(aktualnaEtapa.deadline).toLocaleDateString('sk-SK')}</p>
+                  </div>
+                )}
+                {hodiny > 0 && (
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">Plán práce</p>
+                    <p className="font-medium text-gray-800">{hodiny} hod. / {ludi} {ludi === 1 ? 'človek' : ludi < 5 ? 'ľudia' : 'ľudí'}</p>
+                  </div>
+                )}
+                {datumKonca && (
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">Reálny koniec</p>
+                    <p className={`font-medium ${ok ? 'text-green-700' : 'text-red-700'}`}>
+                      {new Date(datumKonca).toLocaleDateString('sk-SK')} ({dni} dní)
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })()}
+
        {/* DIELCE TABUĽKA */}
        <div className="bg-white rounded-lg shadow p-6 mb-6">
   <div className="flex justify-between items-center mb-4">
