@@ -31,6 +31,8 @@ export default function DetailCasti({ etapa, onSpat, nacitajData }) {
   const [ukladam, setUkladam] = useState(null);
   const [filtre, setFiltre] = useState({});
   const [aktualnyTab, setAktualnyTab] = useState('dielce');
+  const [zmenene, setZmenene] = useState(false);
+  const [ukladamStav, setUkladamStav] = useState(false);
 
   useEffect(() => { nacitaj(); }, [etapa.id]);
 
@@ -45,20 +47,44 @@ export default function DetailCasti({ etapa, onSpat, nacitajData }) {
     }
   }
 
-  async function handleCheckbox(dielecCastiId, pole, aktualnaHodnota) {
-    setUkladam(`${dielecCastiId}-${pole}`);
+  // Checkbox mení len lokálny state
+  function handleCheckbox(dielecCastiId, pole, aktualnaHodnota) {
+    setCasti(prev => prev.map(cast => ({
+      ...cast,
+      dielce: cast.dielce.map(dc =>
+        dc.id === dielecCastiId ? { ...dc, [pole]: !aktualnaHodnota } : dc
+      )
+    })));
+    setZmenene(true);
+  }
+
+  // Uloží všetky zmeny naraz + timestamp
+  async function handleUlozitStav() {
+    const cast = casti.find(c => c.id === aktivnaCast);
+    if (!cast) return;
+    setUkladamStav(true);
     try {
-      await aktualizujStavDielcaCasti(dielecCastiId, pole, !aktualnaHodnota);
-      setCasti(prev => prev.map(cast => ({
-        ...cast,
-        dielce: cast.dielce.map(dc =>
-          dc.id === dielecCastiId ? { ...dc, [pole]: !aktualnaHodnota } : dc
-        )
-      })));
+      for (const dc of cast.dielce) {
+        await aktualizujStavDielcaCasti(dc.id, 'poskladane', dc.poskladane);
+        await aktualizujStavDielcaCasti(dc.id, 'zvarene', dc.zvarene);
+        await aktualizujStavDielcaCasti(dc.id, 'povrchova_uprava', dc.povrchova_uprava);
+        await aktualizujStavDielcaCasti(dc.id, 'vyvezene', dc.vyvezene);
+        await aktualizujStavDielcaCasti(dc.id, 'namontovane', dc.namontovane);
+      }
+      // Ulož timestamp
+      const { supabase } = await import('../../lib/supabase');
+      await supabase.from('casti_etapy')
+        .update({ posledna_aktualizacia: new Date().toISOString() })
+        .eq('id', cast.id);
+      // Aktualizuj lokálny stav
+      setCasti(prev => prev.map(c =>
+        c.id === cast.id ? { ...c, posledna_aktualizacia: new Date().toISOString() } : c
+      ));
+      setZmenene(false);
     } catch (err) {
       alert('Chyba pri ukladaní: ' + err.message);
     } finally {
-      setUkladam(null);
+      setUkladamStav(false);
     }
   }
 
@@ -154,6 +180,11 @@ export default function DetailCasti({ etapa, onSpat, nacitajData }) {
               <h3 className="font-semibold text-gray-800">{cast.nazov}</h3>
               <p className="text-sm text-gray-500">
                 {cast.dielce.length} dielcov
+                {cast.posledna_aktualizacia && (
+                  <span className="ml-2 text-gray-400">
+                    · uložené {new Date(cast.posledna_aktualizacia).toLocaleString('sk-SK', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' })}
+                  </span>
+                )}
                 {maAktivnyFilter && aktualnyTab === 'dielce' && (
                   <button onClick={resetFiltre} className="ml-2 text-xs text-blue-500 hover:underline">
                     zrušiť filter
@@ -162,6 +193,20 @@ export default function DetailCasti({ etapa, onSpat, nacitajData }) {
               </p>
             </div>
             <div className="flex items-center gap-3">
+              {/* Tlačidlo Uložiť stav */}
+              {aktualnyTab === 'dielce' && (
+                <button
+                  onClick={handleUlozitStav}
+                  disabled={ukladamStav}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    zmenene
+                      ? 'bg-blue-600 text-white hover:bg-blue-700'
+                      : 'bg-gray-100 text-gray-400 cursor-default'
+                  } disabled:opacity-50`}
+                >
+                  {ukladamStav ? 'Ukladám...' : 'Uložiť stav'}
+                </button>
+              )}
               <div className="flex items-center gap-2">
                 <div className="w-32 h-2 bg-gray-100 rounded-full overflow-hidden">
                   <div className="h-full bg-green-500 rounded-full transition-all" style={{ width: `${progresCasti(cast)}%` }} />
@@ -266,17 +311,13 @@ export default function DetailCasti({ etapa, onSpat, nacitajData }) {
                           </td>
                           <td className="px-4 py-3 text-right font-medium text-gray-700">{dc.mnozstvo}</td>
                           {FAZY.map(f => {
-                            const kluc = `${dc.id}-${f.pole}`;
-                            const jeUkladam = ukladam === kluc;
                             const jeZaskrtnuty = !!dc[f.pole];
                             return (
                               <td key={f.pole} className="px-3 py-3 text-center">
                                 <button
                                   onClick={() => handleCheckbox(dc.id, f.pole, jeZaskrtnuty)}
-                                  disabled={jeUkladam}
                                   className={`w-6 h-6 rounded border-2 flex items-center justify-center mx-auto transition-all ${
-                                    jeUkladam ? 'opacity-50 cursor-wait border-gray-300'
-                                    : jeZaskrtnuty ? 'bg-green-500 border-green-500'
+                                    jeZaskrtnuty ? 'bg-green-500 border-green-500'
                                     : 'border-gray-300 hover:border-green-400'
                                   }`}
                                 >
