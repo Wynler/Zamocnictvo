@@ -5,8 +5,8 @@ import { nacitajTimelineData } from '../../lib/api/timeline';
 
 const DAY = 86400000;
 const KAPACITA = 10;
-const LABEL_W = 200;
-const ROW_H = 44;
+const LABEL_W = 220;
+const ROW_H = 52;
 const ZAK_H = 28;
 
 function fmt(date) {
@@ -203,7 +203,7 @@ export default function Timeline({ onSpat }) {
                   <div key={zakazka.id}>
                     {/* Zákazka header riadok */}
                     <div className="flex items-center border-b border-gray-100" style={{ height: ZAK_H, background: '#f9fafb' }}>
-                      <div style={{ width: LABEL_W, flexShrink: 0, fontSize: 11, fontWeight: 600, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.06em', padding: '0 12px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} className="border-r border-gray-200">
+                      <div style={{ width: LABEL_W, flexShrink: 0, fontSize: 12, fontWeight: 700, color: '#111827', textTransform: 'uppercase', letterSpacing: '0.06em', padding: '0 12px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} className="border-r border-gray-200">
                         {zakazka.nazov}
                       </div>
                       <div className="flex-1 relative" style={{ height: ZAK_H }}>
@@ -242,8 +242,8 @@ export default function Timeline({ onSpat }) {
                       return (
                         <div key={etapa.id} className="flex items-center border-b border-gray-100 hover:bg-gray-50" style={{ height: ROW_H }}>
                           <div style={{ width: LABEL_W, flexShrink: 0, padding: '0 12px 0 20px' }} className="border-r border-gray-200">
-                            <div style={{ fontSize: 13, color: '#1F2937', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{etapa.nazov}</div>
-                            <div style={{ fontSize: 11, color: '#9CA3AF' }}>
+                            <div style={{ fontSize: 14, fontWeight: 600, color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{etapa.nazov}</div>
+                            <div style={{ fontSize: 12, color: '#6B7280' }}>
                               {realPct}% · {etapa.pocet_ludi ? `${etapa.pocet_ludi} ľudí` : '—'}
                             </div>
                           </div>
