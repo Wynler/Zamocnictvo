@@ -23,7 +23,7 @@ export default function ZoznamZakaziek({
   };
 
   const filtrovanieZakazky = filterStav === 'vsetky' 
-    ? zakazky 
+    ? zakazky.filter(z => z.stav !== 'vymazane')
     : zakazky.filter(z => z.stav === filterStav);
 
   return (
