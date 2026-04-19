@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Pencil, Plus, Trash2, Upload, X, Scissors, LayoutList } from 'lucide-react';
 import ImportModal from '../import/ImportModal';
 import RozdelitEtapuModal from '../casti/RozdelitEtapuModal';
@@ -42,6 +42,28 @@ export default function DetailEtapy({
   const kalendar = generateKalendar(aktualnaEtapa);
   const [showImport, setShowImport] = useState(false);
   const [showRozdelit, setShowRozdelit] = useState(false);
+  const [pocetLudiEdit, setPocetLudiEdit] = useState(aktualnaEtapa.pocetLudi || 1);
+  const [progres, setProgres] = useState(null);
+  const [ukladamLudi, setUkladamLudi] = useState(false);
+
+  // Načítaj progres pri mount
+  React.useEffect(() => {
+    if (aktualnaEtapa.id) {
+      import('../../lib/api/progres').then(m => {
+        m.nacitajProgresEtapy(aktualnaEtapa.id).then(p => setProgres(p)).catch(() => setProgres(0));
+      });
+    }
+  }, [aktualnaEtapa.id]);
+
+  async function handleUlozitLudi() {
+    setUkladamLudi(true);
+    try {
+      const m = await import('../../lib/api/progres');
+      await m.aktualizujPocetLudi(aktualnaEtapa.id, pocetLudiEdit);
+      await nacitajData();
+    } catch(e) { alert('Chyba: ' + e.message); }
+    finally { setUkladamLudi(false); }
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -67,18 +89,20 @@ export default function DetailEtapy({
         {/* TIMELINE BLOK */}
         {(aktualnaEtapa.datumZaciatku || aktualnaEtapa.deadline || aktualnaEtapa.clovekohod) && (() => {
           const hodiny = parseFloat(aktualnaEtapa.clovekohod) || 0;
-          const ludi = parseInt(aktualnaEtapa.pocetLudi) || 1;
-          const dni = hodiny > 0 ? Math.ceil(hodiny / (ludi * 8)) : null;
-          let datumKonca = null;
-          if (aktualnaEtapa.datumZaciatku && dni) {
-            const d = new Date(aktualnaEtapa.datumZaciatku);
-            d.setDate(d.getDate() + dni);
-            datumKonca = d.toISOString().split('T')[0];
-          }
+          const ludi = parseInt(pocetLudiEdit) || 1;
+          const progresPct = progres ?? 0;
+          const zostatok = hodiny * (1 - progresPct / 100);
+          const zostDni = zostatok > 0 ? Math.ceil(zostatok / (ludi * 8)) : 0;
+          const dnes = new Date();
+          dnes.setHours(0,0,0,0);
+          const datumKonca = zostDni > 0
+            ? (() => { const d = new Date(dnes); d.setDate(d.getDate() + zostDni); return d.toISOString().split('T')[0]; })()
+            : null;
           const ok = datumKonca && aktualnaEtapa.deadline ? datumKonca <= aktualnaEtapa.deadline : null;
+
           return (
             <div className="bg-white rounded-lg shadow p-5 mb-6">
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-between mb-4">
                 <h3 className="font-semibold text-gray-800 text-lg">{aktualnaEtapa.nazov}</h3>
                 {ok !== null && (
                   <span className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium ${
@@ -89,7 +113,27 @@ export default function DetailEtapy({
                   </span>
                 )}
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+
+              {/* Progres bar */}
+              {progres !== null && (
+                <div className="mb-4">
+                  <div className="flex justify-between text-xs text-gray-500 mb-1">
+                    <span>Postup výroby</span>
+                    <span className="font-medium">{progresPct}% hotových dielcov</span>
+                  </div>
+                  <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all"
+                      style={{
+                        width: `${progresPct}%`,
+                        background: progresPct >= 100 ? '#22c55e' : progresPct > 50 ? '#3b82f6' : '#f59e0b'
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 items-end">
                 {aktualnaEtapa.datumZaciatku && (
                   <div>
                     <p className="text-xs text-gray-500 mb-1">Začiatok</p>
@@ -104,15 +148,35 @@ export default function DetailEtapy({
                 )}
                 {hodiny > 0 && (
                   <div>
-                    <p className="text-xs text-gray-500 mb-1">Plán práce</p>
-                    <p className="font-medium text-gray-800">{hodiny} hod. / {ludi} {ludi === 1 ? 'človek' : ludi < 5 ? 'ľudia' : 'ľudí'}</p>
+                    <p className="text-xs text-gray-500 mb-1">Zostatok práce</p>
+                    <p className="font-medium text-gray-800">{Math.round(zostatok)} hod.</p>
                   </div>
                 )}
+                {/* Inline edit počtu ľudí */}
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Počet ľudí</p>
+                  <div className="flex gap-1 items-center">
+                    <input
+                      type="number" min="1" step="1"
+                      value={pocetLudiEdit}
+                      onChange={e => setPocetLudiEdit(e.target.value)}
+                      className="w-16 px-2 py-1 border border-gray-300 rounded text-sm font-medium"
+                    />
+                    <button
+                      onClick={handleUlozitLudi}
+                      disabled={ukladamLudi}
+                      className="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      {ukladamLudi ? '...' : 'OK'}
+                    </button>
+                  </div>
+                </div>
                 {datumKonca && (
                   <div>
-                    <p className="text-xs text-gray-500 mb-1">Reálny koniec</p>
+                    <p className="text-xs text-gray-500 mb-1">Odhadovaný koniec</p>
                     <p className={`font-medium ${ok ? 'text-green-700' : 'text-red-700'}`}>
-                      {new Date(datumKonca).toLocaleDateString('sk-SK')} ({dni} dní)
+                      {new Date(datumKonca).toLocaleDateString('sk-SK')}
+                      <span className="text-xs ml-1">({zostDni} dní)</span>
                     </p>
                   </div>
                 )}
