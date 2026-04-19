@@ -15,6 +15,7 @@ import DetailZakazky from './zakazky/DetailZakazky';
 import NovaEtapa from './etapy/NovaEtapa';
 import DetailEtapy from './etapy/DetailEtapy';
 import DetailCasti from './casti/DetailCasti';
+import Timeline from './timeline/Timeline';
 
 export default function ZamocnickaSprava() {
   // STATE
@@ -51,8 +52,7 @@ export default function ZamocnickaSprava() {
     datumUkoncenia: '', datumVyrobyOd: '', datumVyrobyDo: '',
     datumPovrchovejUpravyOd: '', datumPovrchovejUpravyDo: '',
     datumMontazeOd: '', datumMontazeDo: '',
-    zinkovanie: 'nic', farba: 'nic', farbaTon: '', popis: '', stav: 'planovane',
-datumZaciatku: '', deadline: '', clovekohod: '', pocetLudi: ''
+    zinkovanie: 'nic', farba: 'nic', farbaTon: '', popis: '', stav: 'planovane'
   });
   
   const [novyDielec, setNovyDielec] = useState({
@@ -172,8 +172,7 @@ datumZaciatku: '', deadline: '', clovekohod: '', pocetLudi: ''
         datumUkoncenia: '', datumVyrobyOd: '', datumVyrobyDo: '',
         datumPovrchovejUpravyOd: '', datumPovrchovejUpravyDo: '',
         datumMontazeOd: '', datumMontazeDo: '',
-        zinkovanie: 'nic', farba: 'nic', farbaTon: '', popis: '', stav: 'planovane',
-datumZaciatku: '', deadline: '', clovekohod: '', pocetLudi: ''
+        zinkovanie: 'nic', farba: 'nic', farbaTon: '', popis: '', stav: 'planovane'
       });
     } catch (error) {
       alert('Chyba pri pridávaní etapy: ' + error.message);
@@ -318,6 +317,7 @@ datumZaciatku: '', deadline: '', clovekohod: '', pocetLudi: ''
         filterStav={filterStav}
         setFilterStav={setFilterStav}
         onNovaZakazka={() => setZobrazenie('nova')}
+        onTimeline={() => setZobrazenie('timeline')}
         onDetailZakazky={(zakazka) => {
           setAktualnaZakazka(zakazka);
           setZobrazenie('detail');
@@ -332,6 +332,12 @@ datumZaciatku: '', deadline: '', clovekohod: '', pocetLudi: ''
         setZakazkaToDelete={setZakazkaToDelete}
         handleVymazat={handleVymazat}
       />
+    );
+  }
+
+  if (zobrazenie === 'timeline') {
+    return (
+      <Timeline onSpat={() => setZobrazenie('zoznam')} />
     );
   }
 
