@@ -206,7 +206,7 @@ export default function ZoznamZakaziek({
             <p className="text-lg mb-2">
               {filterStav === 'vsetky' 
                 ? 'Žiadne zákazky' 
-                : `Žiadne zákazky v stave "${stavyZakaziek[filterStav]?.label}"`}
+                : `Žiadne zákazky v sssstave "${stavyZakaziek[filterStav]?.label}"`}
             </p>
             <p className="text-sm">
               {filterStav === 'vsetky' 
