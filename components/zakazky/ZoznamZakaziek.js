@@ -1,4 +1,4 @@
-import { Plus } from 'lucide-react';
+import { Plus, BarChart2 } from 'lucide-react';
 import ZakazkaKarta from './ZakazkaKarta';
 
 export default function ZoznamZakaziek({ 
@@ -6,6 +6,7 @@ export default function ZoznamZakaziek({
   filterStav,
   setFilterStav,
   onNovaZakazka,
+  onTimeline,
   onDetailZakazky,
   onVymazatZakazku,
   showDeleteConfirm,
@@ -63,13 +64,22 @@ export default function ZoznamZakaziek({
         {/* HEADER */}
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-gray-800">Zákazky</h1>
-          <button
-            onClick={onNovaZakazka}
-            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-          >
-            <Plus size={20} />
-            Nová zákazka
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={onTimeline}
+              className="flex items-center gap-2 bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-800"
+            >
+              <BarChart2 size={20} />
+              Timeline
+            </button>
+            <button
+              onClick={onNovaZakazka}
+              className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+            >
+              <Plus size={20} />
+              Nová zákazka
+            </button>
+          </div>
         </div>
 
         {/* FILTERS */}
