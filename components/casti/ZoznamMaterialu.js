@@ -103,7 +103,8 @@ function SuhrnMaterialu({ vsetkyPolozky }) {
     const material = p.material || '—';
     const profil = p.profil || '—';
     const dlzka = p.dlzka_mm ?? '—';
-    const kluc = `${material}__${profil}__${dlzka}`;
+    const kluc = `${p.polozka}__${material}__${profil}__${dlzka}`;
+//             ↑ PRIDAJ POLOŽKU!
 
     if (!skupiny[kluc]) {
       skupiny[kluc] = { material, profil, dlzka, pocet: 0, hmotnost: 0 };
