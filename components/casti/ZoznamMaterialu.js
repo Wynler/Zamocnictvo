@@ -107,7 +107,7 @@ function SuhrnMaterialu({ vsetkyPolozky }) {
 //             ↑ PRIDAJ POLOŽKU!
 
     if (!skupiny[kluc]) {
-      skupiny[kluc] = { material, profil, dlzka, pocet: 0, hmotnost: 0 };
+      skupiny[kluc] = { polozka: p.polozka, material, profil, dlzka, pocet: 0, hmotnost: 0 };
     }
     skupiny[kluc].pocet += (p.pocet || 0);
     skupiny[kluc].hmotnost += vypocitajHmotnostCelkovu(p);
