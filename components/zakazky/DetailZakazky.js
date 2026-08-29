@@ -14,8 +14,7 @@ export default function DetailZakazky({
   onDetailEtapy,
   onZacatEditovatZakazku,
   onUlozitZakazku,
-  onZrusitEditaciu,
-  onZmenitStavZakazky
+  onZrusitEditaciu
 }) {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -28,7 +27,12 @@ export default function DetailZakazky({
           >
             <ArrowLeft size={24} />
           </button>
-          <h1 className="text-3xl font-bold text-gray-800">{zakazka.nazov}</h1>
+          <h1 className="text-3xl font-bold text-gray-800">
+            {zakazka.nazov}
+            {zakazka.cisloZakazky && (
+              <span className="ml-3 text-lg font-normal text-gray-400">#{zakazka.cisloZakazky}</span>
+            )}
+          </h1>
           <span className={`ml-auto px-4 py-2 rounded-full text-sm font-medium ${
             stavyZakaziek[zakazka.stav]?.farba || 'bg-gray-100 text-gray-700'
           }`}>
@@ -75,6 +79,18 @@ export default function DetailZakazky({
                         value={editovanaZakazka.nazov}
                         onChange={(e) => setEditovanaZakazka({...editovanaZakazka, nazov: e.target.value})}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Číslo zákazky (pre účtovníctvo)
+                      </label>
+                      <input
+                        type="text"
+                        value={editovanaZakazka.cisloZakazky || ''}
+                        onChange={(e) => setEditovanaZakazka({...editovanaZakazka, cisloZakazky: e.target.value})}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                        placeholder="napr. ZAK-2024-001"
                       />
                     </div>
                     <div>
@@ -161,6 +177,20 @@ export default function DetailZakazky({
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                       />
                     </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Stav zákazky
+                      </label>
+                      <select
+                        value={editovanaZakazka.stav}
+                        onChange={(e) => setEditovanaZakazka({...editovanaZakazka, stav: e.target.value})}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                      >
+                        {Object.entries(stavyZakaziek).map(([hodnota, {label}]) => (
+                          <option key={hodnota} value={hodnota}>{label}</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                   <div className="flex gap-3">
                     <button
@@ -179,6 +209,12 @@ export default function DetailZakazky({
                 </div>
               ) : (
                 <div className="grid md:grid-cols-2 gap-4 text-sm">
+                  {zakazka.cisloZakazky && (
+                    <div>
+                      <span className="text-gray-600">Číslo zákazky:</span>
+                      <span className="ml-2 font-medium">{zakazka.cisloZakazky}</span>
+                    </div>
+                  )}
                   <div>
                     <span className="text-gray-600">Zákazník:</span>
                     <span className="ml-2 font-medium">{zakazka.zakaznik}</span>
@@ -229,38 +265,20 @@ export default function DetailZakazky({
               )}
             </>
           )}
-
-          {/* ZMENA STAVU */}
-          {!editujemZakazku && (
-            <div className="mt-4 pt-4 border-t">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Zmeniť stav zákazky:
-              </label>
-              <select
-                value={zakazka.stav}
-                onChange={(e) => onZmenitStavZakazky(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg"
-              >
-                {Object.entries(stavyZakaziek).map(([hodnota, {label}]) => (
-                  <option key={hodnota} value={hodnota}>{label}</option>
-                ))}
-              </select>
-            </div>
-          )}
         </div>
 
         {/* ETAPY */}
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold text-gray-800">
-              Etapy ({zakazka.etapy?.length || 0})
+              Projekty ({zakazka.etapy?.length || 0})
             </h2>
             <button
               onClick={onNovaEtapa}
               className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
             >
               <Plus size={20} />
-              Nová etapa
+              Nový projekt
             </button>
           </div>
 
@@ -297,8 +315,8 @@ export default function DetailZakazky({
           ) : (
             <div className="text-center py-8 text-gray-500">
               <Wrench size={48} className="mx-auto mb-3 text-gray-300" />
-              <p>Zatiaľ žiadne etapy</p>
-              <p className="text-sm">Začni pridaním prvej etapy</p>
+              <p>Zatiaľ žiadne projekty</p>
+              <p className="text-sm">Začni pridaním prvého projektu</p>
             </div>
           )}
         </div>

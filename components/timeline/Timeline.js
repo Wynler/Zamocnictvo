@@ -192,7 +192,7 @@ export default function Timeline({ onSpat }) {
 
               {/* Zákazky + etapy */}
               {aktívne.length === 0 ? (
-                <div className="p-8 text-center text-gray-400 text-sm">Žiadne etapy s nastaveným timeline. Pridaj začiatok a deadline k etapám.</div>
+                <div className="p-8 text-center text-gray-400 text-sm">Žiadne projekty s nastaveným timeline. Pridaj začiatok a deadline k projektom.</div>
               ) : aktívne.map(zakazka => {
                 const deadlines = zakazka.etapy.filter(e => e.deadline).map(e => new Date(e.deadline));
                 const starts = zakazka.etapy.filter(e => e.datum_zaciatku).map(e => new Date(e.datum_zaciatku));
@@ -274,7 +274,7 @@ export default function Timeline({ onSpat }) {
 
           {/* Legenda */}
           <div className="px-4 py-3 border-t border-gray-100 flex gap-4 flex-wrap text-xs text-gray-400 items-center">
-            <span className="flex items-center gap-1.5"><span style={{ width:16,height:6,borderRadius:3,background:'#EAF3DE',display:'inline-block' }} />Plán etapy</span>
+            <span className="flex items-center gap-1.5"><span style={{ width:16,height:6,borderRadius:3,background:'#EAF3DE',display:'inline-block' }} />Plán projektu</span>
             <span className="flex items-center gap-1.5"><span style={{ width:16,height:6,borderRadius:3,background:'#3B6D11',display:'inline-block' }} />Výroba</span>
             <span className="flex items-center gap-1.5"><span style={{ width:3,height:14,borderRadius:1.5,background:'#3B6D11',display:'inline-block' }} />Deadline ok</span>
             <span className="flex items-center gap-1.5"><span style={{ width:3,height:14,borderRadius:1.5,background:'#A32D2D',display:'inline-block' }} />Deadline mešká</span>

@@ -1,6 +1,6 @@
 'use client'
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Pencil, Plus, Trash2, Upload, X, Scissors, LayoutList } from 'lucide-react';
+import { ArrowLeft, Pencil, Plus, Trash2, Upload, X, Scissors, LayoutList, Edit, ChevronDown, ChevronRight } from 'lucide-react';
 import ImportModal from '../import/ImportModal';
 import RozdelitEtapuModal from '../casti/RozdelitEtapuModal';
 import PrehladCasti from '../casti/PrehladCasti';
@@ -24,7 +24,6 @@ export default function DetailEtapy({
   onZacatEditovatEtapu,
   onUlozitEtapu,
   onZrusitEditaciuEtapy,
-  onZmenitStavEtapy,
   onPridatDielec,
   onVymazatDielec,
   onZacatEditovatDielec,
@@ -42,6 +41,7 @@ export default function DetailEtapy({
   const kalendar = generateKalendar(aktualnaEtapa);
   const [showImport, setShowImport] = useState(false);
   const [showRozdelit, setShowRozdelit] = useState(false);
+  const [showDielce, setShowDielce] = useState(false);
   const [pocetLudiEdit, setPocetLudiEdit] = useState(aktualnaEtapa.pocetLudi || 1);
   const [progres, setProgres] = useState(null);
   const [ukladamLudi, setUkladamLudi] = useState(false);
@@ -85,6 +85,269 @@ export default function DetailEtapy({
         <button onClick={onSpat} className="flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-4">
           <ArrowLeft size={20} /> Späť na zákazku
         </button>
+
+        {/* INFORMÁCIE O PROJEKTE */}
+        <div className="bg-white rounded-lg shadow p-6 mb-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold text-gray-800">
+              {editujemEtapu ? 'Upraviť projekt' : aktualnaEtapa.nazov}
+            </h2>
+            {!editujemEtapu && (
+              <button
+                onClick={onZacatEditovatEtapu}
+                className="flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm font-medium"
+              >
+                <Edit size={16} />
+                Upraviť
+              </button>
+            )}
+          </div>
+
+          {editujemEtapu ? (
+            <div className="space-y-6">
+              {/* ZÁKLADNÉ */}
+              <div className="border-b pb-4">
+                <h3 className="text-sm font-semibold text-gray-500 uppercase mb-3">Základné informácie</h3>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Názov projektu</label>
+                    <input
+                      type="text"
+                      value={editovanaEtapa.nazov}
+                      onChange={(e) => setEditovanaEtapa({...editovanaEtapa, nazov: e.target.value})}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Kontaktná osoba</label>
+                    <input type="text" value={editovanaEtapa.kontaktnaOsoba || ''}
+                      onChange={(e) => setEditovanaEtapa({...editovanaEtapa, kontaktnaOsoba: e.target.value})}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Telefón</label>
+                    <input type="tel" value={editovanaEtapa.telefon || ''}
+                      onChange={(e) => setEditovanaEtapa({...editovanaEtapa, telefon: e.target.value})}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                    <input type="email" value={editovanaEtapa.email || ''}
+                      onChange={(e) => setEditovanaEtapa({...editovanaEtapa, email: e.target.value})}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Hmotnosť podľa výkazu (kg)</label>
+                    <input type="number" step="0.01" value={editovanaEtapa.hmotnostPodlaVykazu || ''}
+                      onChange={(e) => setEditovanaEtapa({...editovanaEtapa, hmotnostPodlaVykazu: e.target.value})}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+                  </div>
+                </div>
+              </div>
+
+              {/* TIMELINE */}
+              <div className="border-b pb-4">
+                <h3 className="text-sm font-semibold text-gray-500 uppercase mb-3">Timeline</h3>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Dátum začiatku</label>
+                    <input type="date" value={editovanaEtapa.datumZaciatku || ''}
+                      onChange={(e) => setEditovanaEtapa({...editovanaEtapa, datumZaciatku: e.target.value})}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Deadline (požadovaný dátum)</label>
+                    <input type="date" value={editovanaEtapa.deadline || ''}
+                      onChange={(e) => setEditovanaEtapa({...editovanaEtapa, deadline: e.target.value})}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Človekodiny celkom</label>
+                    <input type="number" step="1" value={editovanaEtapa.clovekohod || ''}
+                      onChange={(e) => setEditovanaEtapa({...editovanaEtapa, clovekohod: e.target.value})}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Počet ľudí</label>
+                    <input type="number" step="1" min="1" value={editovanaEtapa.pocetLudi || ''}
+                      onChange={(e) => setEditovanaEtapa({...editovanaEtapa, pocetLudi: e.target.value})}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+                  </div>
+                </div>
+              </div>
+
+              {/* PODROBNÉ TERMÍNY */}
+              <div className="border-b pb-4">
+                <h3 className="text-sm font-semibold text-gray-500 uppercase mb-3">Podrobné termíny</h3>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Dátum ukončenia</label>
+                    <input type="date" value={editovanaEtapa.datumUkoncenia || ''}
+                      onChange={(e) => setEditovanaEtapa({...editovanaEtapa, datumUkoncenia: e.target.value})}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+                  </div>
+                  <div></div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Výroba od</label>
+                    <input type="date" value={editovanaEtapa.datumVyrobyOd || ''}
+                      onChange={(e) => setEditovanaEtapa({...editovanaEtapa, datumVyrobyOd: e.target.value})}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Výroba do</label>
+                    <input type="date" value={editovanaEtapa.datumVyrobyDo || ''}
+                      onChange={(e) => setEditovanaEtapa({...editovanaEtapa, datumVyrobyDo: e.target.value})}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Povrchová úprava od</label>
+                    <input type="date" value={editovanaEtapa.datumPovrchovejUpravyOd || ''}
+                      onChange={(e) => setEditovanaEtapa({...editovanaEtapa, datumPovrchovejUpravyOd: e.target.value})}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Povrchová úprava do</label>
+                    <input type="date" value={editovanaEtapa.datumPovrchovejUpravyDo || ''}
+                      onChange={(e) => setEditovanaEtapa({...editovanaEtapa, datumPovrchovejUpravyDo: e.target.value})}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Montáž od</label>
+                    <input type="date" value={editovanaEtapa.datumMontazeOd || ''}
+                      onChange={(e) => setEditovanaEtapa({...editovanaEtapa, datumMontazeOd: e.target.value})}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Montáž do</label>
+                    <input type="date" value={editovanaEtapa.datumMontazeDo || ''}
+                      onChange={(e) => setEditovanaEtapa({...editovanaEtapa, datumMontazeDo: e.target.value})}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+                  </div>
+                </div>
+              </div>
+
+              {/* POVRCHOVÉ ÚPRAVY */}
+              <div className="border-b pb-4">
+                <h3 className="text-sm font-semibold text-gray-500 uppercase mb-3">Povrchové úpravy</h3>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Zinkovanie</label>
+                    <select value={editovanaEtapa.zinkovanie}
+                      onChange={(e) => setEditovanaEtapa({...editovanaEtapa, zinkovanie: e.target.value})}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                      <option value="nic">Žiadne</option>
+                      <option value="ponorove">Ponorové</option>
+                      <option value="galvanicke">Galvanické</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Farba</label>
+                    <select value={editovanaEtapa.farba}
+                      onChange={(e) => setEditovanaEtapa({...editovanaEtapa, farba: e.target.value})}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                      <option value="nic">Žiadna</option>
+                      <option value="praskovaMat">Prášková mat</option>
+                      <option value="praskovaLes">Prášková lesk</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Odtieň farby (RAL)</label>
+                    <input type="text" value={editovanaEtapa.farbaTon || ''}
+                      onChange={(e) => setEditovanaEtapa({...editovanaEtapa, farbaTon: e.target.value})}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                      placeholder="napr. RAL 9005" />
+                  </div>
+                </div>
+              </div>
+
+              {/* POPIS + STAV */}
+              <div>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Popis / Poznámky</label>
+                    <textarea value={editovanaEtapa.popis || ''}
+                      onChange={(e) => setEditovanaEtapa({...editovanaEtapa, popis: e.target.value})}
+                      rows={3} className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Stav projektu</label>
+                    <select value={editovanaEtapa.stav}
+                      onChange={(e) => setEditovanaEtapa({...editovanaEtapa, stav: e.target.value})}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                      {Object.entries(stavyEtap).map(([hodnota, {label}]) => (
+                        <option key={hodnota} value={hodnota}>{label}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={onUlozitEtapu}
+                  className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
+                >
+                  Uložiť zmeny
+                </button>
+                <button
+                  onClick={onZrusitEditaciuEtapy}
+                  className="bg-gray-200 text-gray-800 px-6 py-2 rounded-lg hover:bg-gray-300"
+                >
+                  Zrušiť
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="text-gray-600">Stav:</span>
+                <span className="ml-2 font-medium">{stavyEtap[aktualnaEtapa.stav]?.label || 'Plánované'}</span>
+              </div>
+              {aktualnaEtapa.kontaktnaOsoba && (
+                <div>
+                  <span className="text-gray-600">Kontakt:</span>
+                  <span className="ml-2 font-medium">{aktualnaEtapa.kontaktnaOsoba}</span>
+                </div>
+              )}
+              {aktualnaEtapa.telefon && (
+                <div>
+                  <span className="text-gray-600">Telefón:</span>
+                  <span className="ml-2 font-medium">{aktualnaEtapa.telefon}</span>
+                </div>
+              )}
+              {aktualnaEtapa.email && (
+                <div>
+                  <span className="text-gray-600">Email:</span>
+                  <span className="ml-2 font-medium">{aktualnaEtapa.email}</span>
+                </div>
+              )}
+              {aktualnaEtapa.hmotnostPodlaVykazu && (
+                <div>
+                  <span className="text-gray-600">Hmotnosť podľa výkazu:</span>
+                  <span className="ml-2 font-medium">{aktualnaEtapa.hmotnostPodlaVykazu} kg</span>
+                </div>
+              )}
+              {aktualnaEtapa.zinkovanie && aktualnaEtapa.zinkovanie !== 'nic' && (
+                <div>
+                  <span className="text-gray-600">Zinkovanie:</span>
+                  <span className="ml-2 font-medium">{aktualnaEtapa.zinkovanie}</span>
+                </div>
+              )}
+              {aktualnaEtapa.farba && aktualnaEtapa.farba !== 'nic' && (
+                <div>
+                  <span className="text-gray-600">Farba:</span>
+                  <span className="ml-2 font-medium">{aktualnaEtapa.farba}{aktualnaEtapa.farbaTon ? ` (${aktualnaEtapa.farbaTon})` : ''}</span>
+                </div>
+              )}
+              {aktualnaEtapa.popis && (
+                <div className="md:col-span-2">
+                  <span className="text-gray-600">Popis:</span>
+                  <span className="ml-2 font-medium">{aktualnaEtapa.popis}</span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* TIMELINE BLOK */}
         {(aktualnaEtapa.datumZaciatku || aktualnaEtapa.deadline || aktualnaEtapa.clovekohod) && (() => {
@@ -188,9 +451,13 @@ export default function DetailEtapy({
        {/* DIELCE TABUĽKA */}
        <div className="bg-white rounded-lg shadow p-6 mb-6">
   <div className="flex justify-between items-center mb-4">
-    <h2 className="text-xl font-semibold text-gray-800">
+    <button
+      onClick={() => setShowDielce(v => !v)}
+      className="flex items-center gap-2 text-xl font-semibold text-gray-800 hover:text-blue-600"
+    >
+      {showDielce ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
       Dielce ({aktualnaEtapa.dielce?.length || 0})
-    </h2>
+    </button>
     <div className="flex gap-2">
       <button
         onClick={() => setShowImport(true)}
@@ -204,7 +471,7 @@ export default function DetailEtapy({
         className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
       >
         <Scissors size={16} />
-        Rozdeliť etapu
+        Rozdeliť projekt
       </button>
       <button
         onClick={onDetailCasti}
@@ -216,52 +483,8 @@ export default function DetailEtapy({
     </div>
   </div>
 
-
-
-          {/* PRIDAŤ DIELEC FORM */}
-          <div className="bg-gray-50 rounded-lg p-4 mb-4">
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-              <input
-                type="text"
-                placeholder="Názov dielca"
-                value={novyDielec.nazov}
-                onChange={(e) => setNovyDielec({...novyDielec, nazov: e.target.value})}
-                className="px-3 py-2 border border-gray-300 rounded-lg"
-              />
-              <input
-                type="number"
-                step="0.01"
-                placeholder="Množstvo"
-                value={novyDielec.mnozstvo}
-                onChange={(e) => setNovyDielec({...novyDielec, mnozstvo: e.target.value})}
-                className="px-3 py-2 border border-gray-300 rounded-lg"
-              />
-              <select
-                value={novyDielec.jednotka}
-                onChange={(e) => setNovyDielec({...novyDielec, jednotka: e.target.value})}
-                className="px-3 py-2 border border-gray-300 rounded-lg"
-              >
-                <option value="m">m (metre)</option>
-                <option value="kg">kg (kilogramy)</option>
-                <option value="ks">ks (kusy)</option>
-              </select>
-              <input
-                type="text"
-                placeholder="Poznámka"
-                value={novyDielec.poznamka}
-                onChange={(e) => setNovyDielec({...novyDielec, poznamka: e.target.value})}
-                className="px-3 py-2 border border-gray-300 rounded-lg"
-              />
-              <button
-                onClick={onPridatDielec}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center justify-center gap-2"
-              >
-                <Plus size={16} />
-                Pridať
-              </button>
-            </div>
-          </div>
-
+  {showDielce && (
+    <>
           {/* PREHĽAD ČASTÍ */}
           <PrehladCasti etapa={aktualnaEtapa} />
 
@@ -381,6 +604,52 @@ export default function DetailEtapy({
           ) : (
             <p className="text-center py-8 text-gray-500">Zatiaľ žiadne dielce</p>
           )}
+
+          {/* PRIDAŤ DIELEC FORM */}
+          <div className="bg-gray-50 rounded-lg p-4 mt-4">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+              <input
+                type="text"
+                placeholder="Názov dielca"
+                value={novyDielec.nazov}
+                onChange={(e) => setNovyDielec({...novyDielec, nazov: e.target.value})}
+                className="px-3 py-2 border border-gray-300 rounded-lg"
+              />
+              <input
+                type="number"
+                step="0.01"
+                placeholder="Množstvo"
+                value={novyDielec.mnozstvo}
+                onChange={(e) => setNovyDielec({...novyDielec, mnozstvo: e.target.value})}
+                className="px-3 py-2 border border-gray-300 rounded-lg"
+              />
+              <select
+                value={novyDielec.jednotka}
+                onChange={(e) => setNovyDielec({...novyDielec, jednotka: e.target.value})}
+                className="px-3 py-2 border border-gray-300 rounded-lg"
+              >
+                <option value="m">m (metre)</option>
+                <option value="kg">kg (kilogramy)</option>
+                <option value="ks">ks (kusy)</option>
+              </select>
+              <input
+                type="text"
+                placeholder="Poznámka"
+                value={novyDielec.poznamka}
+                onChange={(e) => setNovyDielec({...novyDielec, poznamka: e.target.value})}
+                className="px-3 py-2 border border-gray-300 rounded-lg"
+              />
+              <button
+                onClick={onPridatDielec}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center justify-center gap-2"
+              >
+                <Plus size={16} />
+                Pridať
+              </button>
+            </div>
+          </div>
+    </>
+  )}
         </div>
 
         {/* KALENDÁR */}

@@ -3,8 +3,8 @@
 import React, { useState, useEffect } from 'react';
 
 // API imports
-import { nacitajZakazky, pridajZakazku, vymazZakazku, aktualizujZakazku, zmenStavZakazky } from '../lib/api/zakazky';
-import { pridajEtapu, aktualizujEtapu, zmenStavEtapy } from '../lib/api/etapy';
+import { nacitajZakazky, pridajZakazku, vymazZakazku, aktualizujZakazku } from '../lib/api/zakazky';
+import { pridajEtapu, aktualizujEtapu } from '../lib/api/etapy';
 import { pridajDielec, aktualizujDielec, vymazDielec } from '../lib/api/dielce';
 
 // Component imports
@@ -149,18 +149,10 @@ export default function ZamocnickaSprava() {
     }
   };
 
-  const handleZmenitStavZakazky = async (novyStav) => {
-    try {
-      await zmenStavZakazky(aktualnaZakazka.id, novyStav);
-      await syncAktualneStavy();
-    } catch (error) {
-      alert('Chyba pri zmene stavu: ' + error.message);
-    }
-  };
 
   const handlePridatEtapu = async () => {
     if (!novaEtapa.nazov) {
-      alert('Vyplň názov etapy');
+      alert('Vyplň názov projektu');
       return;
     }
     try {
@@ -175,7 +167,7 @@ export default function ZamocnickaSprava() {
         zinkovanie: 'nic', farba: 'nic', farbaTon: '', popis: '', stav: 'planovane'
       });
     } catch (error) {
-      alert('Chyba pri pridávaní etapy: ' + error.message);
+      alert('Chyba pri pridávaní projektu: ' + error.message);
     }
   };
 
@@ -186,18 +178,10 @@ export default function ZamocnickaSprava() {
       setEditujemEtapu(false);
       setEditovanaEtapa(null);
     } catch (error) {
-      alert('Chyba pri ukladaní etapy: ' + error.message);
+      alert('Chyba pri ukladaní projektu: ' + error.message);
     }
   };
 
-  const handleZmenitStavEtapy = async (novyStav) => {
-    try {
-      await zmenStavEtapy(aktualnaEtapa.id, novyStav);
-      await syncAktualneStavy();
-    } catch (error) {
-      alert('Chyba pri zmene stavu etapy: ' + error.message);
-    }
-  };
 
   const handlePridatDielec = async () => {
     if (!novyDielec.nazov || !novyDielec.mnozstvo) {
@@ -386,7 +370,6 @@ export default function ZamocnickaSprava() {
           setEditujemZakazku(false);
           setEditovanaZakazka(null);
         }}
-        onZmenitStavZakazky={handleZmenitStavZakazky}
       />
     );
   }
@@ -430,7 +413,6 @@ export default function ZamocnickaSprava() {
           setEditujemEtapu(false);
           setEditovanaEtapa(null);
         }}
-        onZmenitStavEtapy={handleZmenitStavEtapy}
         onPridatDielec={handlePridatDielec}
         onVymazatDielec={handleVymazatDielec}
         onZacatEditovatDielec={(dielec) => {

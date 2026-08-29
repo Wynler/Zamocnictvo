@@ -2,7 +2,7 @@ import './globals.css'
 
 export const metadata = {
   title: 'Zámočnícka správa',
-  description: 'Správa zámočníckych zákaziek a etáp',
+  description: 'Správa zámočníckych zákaziek a projektov',
 }
 
 export default function RootLayout({ children }) {

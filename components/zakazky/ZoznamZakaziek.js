@@ -124,7 +124,7 @@ export default function ZoznamZakaziek({
               <div className="col-span-3">Názov zákazky</div>
               <div className="col-span-2">Zákazník</div>
               <div className="col-span-2">Kontakt</div>
-              <div className="col-span-2">Etapy</div>
+              <div className="col-span-2">Projekty</div>
               <div className="col-span-1">Stav</div>
               <div className="col-span-1 text-right">Akcie</div>
             </div>
