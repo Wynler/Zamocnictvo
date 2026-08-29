@@ -14,8 +14,7 @@ export default function DetailZakazky({
   onDetailEtapy,
   onZacatEditovatZakazku,
   onUlozitZakazku,
-  onZrusitEditaciu,
-  onZmenitStavZakazky
+  onZrusitEditaciu
 }) {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -178,6 +177,20 @@ export default function DetailZakazky({
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                       />
                     </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Stav zákazky
+                      </label>
+                      <select
+                        value={editovanaZakazka.stav}
+                        onChange={(e) => setEditovanaZakazka({...editovanaZakazka, stav: e.target.value})}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                      >
+                        {Object.entries(stavyZakaziek).map(([hodnota, {label}]) => (
+                          <option key={hodnota} value={hodnota}>{label}</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                   <div className="flex gap-3">
                     <button
@@ -251,24 +264,6 @@ export default function DetailZakazky({
                 </div>
               )}
             </>
-          )}
-
-          {/* ZMENA STAVU */}
-          {!editujemZakazku && (
-            <div className="mt-4 pt-4 border-t">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Zmeniť stav zákazky:
-              </label>
-              <select
-                value={zakazka.stav}
-                onChange={(e) => onZmenitStavZakazky(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg"
-              >
-                {Object.entries(stavyZakaziek).map(([hodnota, {label}]) => (
-                  <option key={hodnota} value={hodnota}>{label}</option>
-                ))}
-              </select>
-            </div>
           )}
         </div>
 

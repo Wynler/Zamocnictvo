@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 
 // API imports
-import { nacitajZakazky, pridajZakazku, vymazZakazku, aktualizujZakazku, zmenStavZakazky } from '../lib/api/zakazky';
+import { nacitajZakazky, pridajZakazku, vymazZakazku, aktualizujZakazku } from '../lib/api/zakazky';
 import { pridajEtapu, aktualizujEtapu, zmenStavEtapy } from '../lib/api/etapy';
 import { pridajDielec, aktualizujDielec, vymazDielec } from '../lib/api/dielce';
 
@@ -149,14 +149,6 @@ export default function ZamocnickaSprava() {
     }
   };
 
-  const handleZmenitStavZakazky = async (novyStav) => {
-    try {
-      await zmenStavZakazky(aktualnaZakazka.id, novyStav);
-      await syncAktualneStavy();
-    } catch (error) {
-      alert('Chyba pri zmene stavu: ' + error.message);
-    }
-  };
 
   const handlePridatEtapu = async () => {
     if (!novaEtapa.nazov) {
@@ -386,7 +378,6 @@ export default function ZamocnickaSprava() {
           setEditujemZakazku(false);
           setEditovanaZakazka(null);
         }}
-        onZmenitStavZakazky={handleZmenitStavZakazky}
       />
     );
   }

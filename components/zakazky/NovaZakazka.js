@@ -4,13 +4,6 @@ export default function NovaZakazka({
   onPridat,
   onZrusit
 }) {
-  const stavyZakaziek = {
-    'priprava': { label: 'Príprava', farba: 'bg-yellow-100 text-yellow-700' },
-    'aktivna': { label: 'Aktívna', farba: 'bg-blue-100 text-blue-700' },
-    'ukoncena': { label: 'Ukončená', farba: 'bg-green-100 text-green-700' },
-    'vymazane': { label: 'Vymazané', farba: 'bg-red-100 text-red-700' }
-  };
-
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-4xl mx-auto">
@@ -147,20 +140,6 @@ export default function NovaZakazka({
                   />
                 </div>
               </div>
-            </div>
-
-            {/* STAV */}
-            <div>
-              <h3 className="text-lg font-semibold text-gray-700 mb-4">Stav zákazky</h3>
-              <select
-                value={novaZakazka.stav}
-                onChange={(e) => setNovaZakazka({...novaZakazka, stav: e.target.value})}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-              >
-                {Object.entries(stavyZakaziek).map(([hodnota, {label}]) => (
-                  <option key={hodnota} value={hodnota}>{label}</option>
-                ))}
-              </select>
             </div>
           </div>
 
