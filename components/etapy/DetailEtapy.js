@@ -1,6 +1,6 @@
 'use client'
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Pencil, Plus, Trash2, Upload, X, Scissors, LayoutList, Edit } from 'lucide-react';
+import { ArrowLeft, Pencil, Plus, Trash2, Upload, X, Scissors, LayoutList, Edit, ChevronDown, ChevronRight } from 'lucide-react';
 import ImportModal from '../import/ImportModal';
 import RozdelitEtapuModal from '../casti/RozdelitEtapuModal';
 import PrehladCasti from '../casti/PrehladCasti';
@@ -41,6 +41,7 @@ export default function DetailEtapy({
   const kalendar = generateKalendar(aktualnaEtapa);
   const [showImport, setShowImport] = useState(false);
   const [showRozdelit, setShowRozdelit] = useState(false);
+  const [showDielce, setShowDielce] = useState(false);
   const [pocetLudiEdit, setPocetLudiEdit] = useState(aktualnaEtapa.pocetLudi || 1);
   const [progres, setProgres] = useState(null);
   const [ukladamLudi, setUkladamLudi] = useState(false);
@@ -450,9 +451,13 @@ export default function DetailEtapy({
        {/* DIELCE TABUĽKA */}
        <div className="bg-white rounded-lg shadow p-6 mb-6">
   <div className="flex justify-between items-center mb-4">
-    <h2 className="text-xl font-semibold text-gray-800">
+    <button
+      onClick={() => setShowDielce(v => !v)}
+      className="flex items-center gap-2 text-xl font-semibold text-gray-800 hover:text-blue-600"
+    >
+      {showDielce ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
       Dielce ({aktualnaEtapa.dielce?.length || 0})
-    </h2>
+    </button>
     <div className="flex gap-2">
       <button
         onClick={() => setShowImport(true)}
@@ -478,52 +483,8 @@ export default function DetailEtapy({
     </div>
   </div>
 
-
-
-          {/* PRIDAŤ DIELEC FORM */}
-          <div className="bg-gray-50 rounded-lg p-4 mb-4">
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-              <input
-                type="text"
-                placeholder="Názov dielca"
-                value={novyDielec.nazov}
-                onChange={(e) => setNovyDielec({...novyDielec, nazov: e.target.value})}
-                className="px-3 py-2 border border-gray-300 rounded-lg"
-              />
-              <input
-                type="number"
-                step="0.01"
-                placeholder="Množstvo"
-                value={novyDielec.mnozstvo}
-                onChange={(e) => setNovyDielec({...novyDielec, mnozstvo: e.target.value})}
-                className="px-3 py-2 border border-gray-300 rounded-lg"
-              />
-              <select
-                value={novyDielec.jednotka}
-                onChange={(e) => setNovyDielec({...novyDielec, jednotka: e.target.value})}
-                className="px-3 py-2 border border-gray-300 rounded-lg"
-              >
-                <option value="m">m (metre)</option>
-                <option value="kg">kg (kilogramy)</option>
-                <option value="ks">ks (kusy)</option>
-              </select>
-              <input
-                type="text"
-                placeholder="Poznámka"
-                value={novyDielec.poznamka}
-                onChange={(e) => setNovyDielec({...novyDielec, poznamka: e.target.value})}
-                className="px-3 py-2 border border-gray-300 rounded-lg"
-              />
-              <button
-                onClick={onPridatDielec}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center justify-center gap-2"
-              >
-                <Plus size={16} />
-                Pridať
-              </button>
-            </div>
-          </div>
-
+  {showDielce && (
+    <>
           {/* PREHĽAD ČASTÍ */}
           <PrehladCasti etapa={aktualnaEtapa} />
 
@@ -643,6 +604,52 @@ export default function DetailEtapy({
           ) : (
             <p className="text-center py-8 text-gray-500">Zatiaľ žiadne dielce</p>
           )}
+
+          {/* PRIDAŤ DIELEC FORM */}
+          <div className="bg-gray-50 rounded-lg p-4 mt-4">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+              <input
+                type="text"
+                placeholder="Názov dielca"
+                value={novyDielec.nazov}
+                onChange={(e) => setNovyDielec({...novyDielec, nazov: e.target.value})}
+                className="px-3 py-2 border border-gray-300 rounded-lg"
+              />
+              <input
+                type="number"
+                step="0.01"
+                placeholder="Množstvo"
+                value={novyDielec.mnozstvo}
+                onChange={(e) => setNovyDielec({...novyDielec, mnozstvo: e.target.value})}
+                className="px-3 py-2 border border-gray-300 rounded-lg"
+              />
+              <select
+                value={novyDielec.jednotka}
+                onChange={(e) => setNovyDielec({...novyDielec, jednotka: e.target.value})}
+                className="px-3 py-2 border border-gray-300 rounded-lg"
+              >
+                <option value="m">m (metre)</option>
+                <option value="kg">kg (kilogramy)</option>
+                <option value="ks">ks (kusy)</option>
+              </select>
+              <input
+                type="text"
+                placeholder="Poznámka"
+                value={novyDielec.poznamka}
+                onChange={(e) => setNovyDielec({...novyDielec, poznamka: e.target.value})}
+                className="px-3 py-2 border border-gray-300 rounded-lg"
+              />
+              <button
+                onClick={onPridatDielec}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center justify-center gap-2"
+              >
+                <Plus size={16} />
+                Pridať
+              </button>
+            </div>
+          </div>
+    </>
+  )}
         </div>
 
         {/* KALENDÁR */}
