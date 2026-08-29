@@ -28,7 +28,12 @@ export default function DetailZakazky({
           >
             <ArrowLeft size={24} />
           </button>
-          <h1 className="text-3xl font-bold text-gray-800">{zakazka.nazov}</h1>
+          <h1 className="text-3xl font-bold text-gray-800">
+            {zakazka.nazov}
+            {zakazka.cisloZakazky && (
+              <span className="ml-3 text-lg font-normal text-gray-400">#{zakazka.cisloZakazky}</span>
+            )}
+          </h1>
           <span className={`ml-auto px-4 py-2 rounded-full text-sm font-medium ${
             stavyZakaziek[zakazka.stav]?.farba || 'bg-gray-100 text-gray-700'
           }`}>
@@ -75,6 +80,18 @@ export default function DetailZakazky({
                         value={editovanaZakazka.nazov}
                         onChange={(e) => setEditovanaZakazka({...editovanaZakazka, nazov: e.target.value})}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Číslo zákazky (pre účtovníctvo)
+                      </label>
+                      <input
+                        type="text"
+                        value={editovanaZakazka.cisloZakazky || ''}
+                        onChange={(e) => setEditovanaZakazka({...editovanaZakazka, cisloZakazky: e.target.value})}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                        placeholder="napr. ZAK-2024-001"
                       />
                     </div>
                     <div>
@@ -179,6 +196,12 @@ export default function DetailZakazky({
                 </div>
               ) : (
                 <div className="grid md:grid-cols-2 gap-4 text-sm">
+                  {zakazka.cisloZakazky && (
+                    <div>
+                      <span className="text-gray-600">Číslo zákazky:</span>
+                      <span className="ml-2 font-medium">{zakazka.cisloZakazky}</span>
+                    </div>
+                  )}
                   <div>
                     <span className="text-gray-600">Zákazník:</span>
                     <span className="ml-2 font-medium">{zakazka.zakaznik}</span>
