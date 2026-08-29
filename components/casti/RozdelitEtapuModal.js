@@ -96,7 +96,7 @@ export default function RozdelitEtapuModal({ etapa, onClose, onSuccess }) {
         {/* Header */}
         <div className="flex justify-between items-center p-6 border-b">
           <div>
-            <h2 className="text-xl font-bold text-gray-800">Rozdeliť etapu</h2>
+            <h2 className="text-xl font-bold text-gray-800">Rozdeliť projekt</h2>
             <p className="text-sm text-gray-500 mt-1">{etapa.nazov}</p>
           </div>
           <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded">

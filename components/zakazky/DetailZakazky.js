@@ -276,14 +276,14 @@ export default function DetailZakazky({
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold text-gray-800">
-              Etapy ({zakazka.etapy?.length || 0})
+              Projekty ({zakazka.etapy?.length || 0})
             </h2>
             <button
               onClick={onNovaEtapa}
               className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
             >
               <Plus size={20} />
-              Nová etapa
+              Nový projekt
             </button>
           </div>
 
@@ -320,8 +320,8 @@ export default function DetailZakazky({
           ) : (
             <div className="text-center py-8 text-gray-500">
               <Wrench size={48} className="mx-auto mb-3 text-gray-300" />
-              <p>Zatiaľ žiadne etapy</p>
-              <p className="text-sm">Začni pridaním prvej etapy</p>
+              <p>Zatiaľ žiadne projekty</p>
+              <p className="text-sm">Začni pridaním prvého projektu</p>
             </div>
           )}
         </div>

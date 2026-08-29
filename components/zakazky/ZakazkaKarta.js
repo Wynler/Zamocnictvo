@@ -25,7 +25,7 @@ export default function ZakazkaKarta({
       </div>
 
       <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
-        <span>📋 {zakazka.etapy?.length || 0} etáp</span>
+        <span>📋 {zakazka.etapy?.length || 0} projektov</span>
         {zakazka.etapy?.length > 0 && (
           <span>
             ✅ {zakazka.etapy.filter(e => e.stav === 'dokoncene').length} dokončených

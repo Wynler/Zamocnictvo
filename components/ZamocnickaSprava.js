@@ -160,7 +160,7 @@ export default function ZamocnickaSprava() {
 
   const handlePridatEtapu = async () => {
     if (!novaEtapa.nazov) {
-      alert('Vyplň názov etapy');
+      alert('Vyplň názov projektu');
       return;
     }
     try {
@@ -175,7 +175,7 @@ export default function ZamocnickaSprava() {
         zinkovanie: 'nic', farba: 'nic', farbaTon: '', popis: '', stav: 'planovane'
       });
     } catch (error) {
-      alert('Chyba pri pridávaní etapy: ' + error.message);
+      alert('Chyba pri pridávaní projektu: ' + error.message);
     }
   };
 
@@ -186,7 +186,7 @@ export default function ZamocnickaSprava() {
       setEditujemEtapu(false);
       setEditovanaEtapa(null);
     } catch (error) {
-      alert('Chyba pri ukladaní etapy: ' + error.message);
+      alert('Chyba pri ukladaní projektu: ' + error.message);
     }
   };
 
@@ -195,7 +195,7 @@ export default function ZamocnickaSprava() {
       await zmenStavEtapy(aktualnaEtapa.id, novyStav);
       await syncAktualneStavy();
     } catch (error) {
-      alert('Chyba pri zmene stavu etapy: ' + error.message);
+      alert('Chyba pri zmene stavu projektu: ' + error.message);
     }
   };
 

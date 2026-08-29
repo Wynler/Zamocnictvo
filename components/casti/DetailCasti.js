@@ -122,8 +122,8 @@ export default function DetailCasti({ etapa, onSpat, nacitajData }) {
   if (casti.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow p-8 text-center">
-        <p className="text-gray-500">Etapa nemá žiadne časti.</p>
-        <p className="text-sm text-gray-400 mt-1">Použi tlačidlo "Rozdeliť etapu" na vytvorenie časti.</p>
+        <p className="text-gray-500">Projekt nemá žiadne časti.</p>
+        <p className="text-sm text-gray-400 mt-1">Použi tlačidlo "Rozdeliť projekt" na vytvorenie časti.</p>
       </div>
     );
   }
