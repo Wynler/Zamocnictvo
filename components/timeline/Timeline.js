@@ -7,9 +7,13 @@ import { nastavKapacitu } from '../../lib/api/kapacita';
 
 const DAY = 86400000;
 const DEFAULT_KAPACITA = 8;
-const LABEL_W = 260;
-const DAY_W = 34;
-const ROW_H = 44;
+const LABEL_W = 300;
+const DAY_W = 48;
+const ROW_H = 60;
+const ETAPA_H = 48;
+const BAR_H = 22;
+
+const VIKEND_PRUH = 'repeating-linear-gradient(135deg, #D6D9DE 0px, #D6D9DE 4px, #E9EBEE 4px, #E9EBEE 10px)';
 
 function fmt(date) {
   const d = new Date(date);
@@ -156,7 +160,7 @@ export default function Timeline({ onSpat }) {
       videneEtapy.add(r.etapaId);
       zoskupene.push({
         typ: 'etapa', etapaId: r.etapaId, nazov: r.etapaNazov, zakazkaNazov: r.zakazkaNazov,
-        povrchOd: r.etapaPovrchOd, povrchDni: r.etapaPovrchDni
+        povrchOd: r.etapaPovrchOd, povrchDo: r.etapaPovrchDo, povrchDni: r.etapaPovrchDni
       });
     }
     zoskupene.push({ typ: 'cast', ...r });
@@ -179,6 +183,14 @@ export default function Timeline({ onSpat }) {
 
         <div className="bg-white rounded-lg shadow overflow-hidden">
 
+          {/* Legenda */}
+          <div className="flex items-center gap-4 px-4 py-2 border-b border-gray-100 text-xs text-gray-500">
+            <span className="flex items-center gap-1.5"><span style={{ width: 14, height: 14, borderRadius: 3, background: '#3B6D11', display: 'inline-block' }} />Výroba</span>
+            <span className="flex items-center gap-1.5"><span style={{ width: 14, height: 14, borderRadius: 3, background: '#7C3AED', display: 'inline-block' }} />Povrchová úprava</span>
+            <span className="flex items-center gap-1.5"><span style={{ width: 14, height: 14, borderRadius: 3, background: VIKEND_PRUH, display: 'inline-block', border: '1px solid #D1D5DB' }} />Víkend</span>
+            <span className="flex items-center gap-1.5"><span style={{ width: 3, height: 14, background: '#DC2626', display: 'inline-block' }} />Dnes</span>
+          </div>
+
           {/* Navigácia */}
           <div className="flex items-center gap-2 px-4 py-2.5 border-b border-gray-100 bg-gray-50">
             <button onClick={() => setOffsetDni(o => o - 14)} className="p-1.5 rounded hover:bg-gray-200 flex"><ChevronLeft size={14} /><ChevronLeft size={14} /></button>
@@ -200,16 +212,21 @@ export default function Timeline({ onSpat }) {
           <div style={{ overflowX: 'auto' }}>
             <div style={{ minWidth: LABEL_W + dni.length * DAY_W, position: 'relative' }}>
 
-              {/* Podfarbenie víkendov + čiara dneška — cez celú výšku tabuľky */}
+              {/* Víkendy (preškrtnuté), denné mriežkové čiary a čiara dneška — cez celú výšku tabuľky */}
               <div style={{ position: 'absolute', left: LABEL_W, right: 0, top: 0, bottom: 0, zIndex: 0, pointerEvents: 'none' }}>
                 {dni.map((d, i) => !jePracovny(d) && (
-                  <div key={i} style={{
+                  <div key={`v-${i}`} style={{
                     position: 'absolute', left: `${(i / dni.length) * 100}%`, width: `${(1 / dni.length) * 100}%`,
-                    top: 0, bottom: 0, background: '#F3F4F6'
+                    top: 0, bottom: 0, background: VIKEND_PRUH
+                  }} />
+                ))}
+                {dni.map((d, i) => (
+                  <div key={`g-${i}`} style={{
+                    position: 'absolute', left: `${(i / dni.length) * 100}%`, top: 0, bottom: 0, width: 1, background: '#E5E7EB'
                   }} />
                 ))}
                 {todayP >= 0 && todayP <= 100 && (
-                  <div style={{ position: 'absolute', left: `${todayP}%`, top: 0, bottom: 0, width: 2, background: '#DC2626' }} />
+                  <div style={{ position: 'absolute', left: `${todayP}%`, top: 0, bottom: 0, width: 3, background: '#DC2626' }} />
                 )}
               </div>
 
@@ -222,7 +239,7 @@ export default function Timeline({ onSpat }) {
                     const isTod = d.toDateString() === today.toDateString();
                     return (
                       <div key={i} style={{ width: DAY_W, flexShrink: 0 }}
-                        className={`text-center py-1 text-xs ${isTod ? 'font-bold text-red-600' : jePracovny(d) ? 'text-gray-500' : 'text-gray-400'}`}>
+                        className={`text-center py-1.5 text-xs ${isTod ? 'font-bold text-red-600' : jePracovny(d) ? 'text-gray-600' : 'text-gray-400'}`}>
                         {fmt(d)}
                       </div>
                     );
@@ -236,16 +253,37 @@ export default function Timeline({ onSpat }) {
                   </div>
                 ) : zoskupene.map((r) => {
                   if (r.typ === 'etapa') {
+                    const povrchSeg = (r.povrchOd && r.povrchDo) ? pracovneSegmenty(r.povrchOd, r.povrchDo) : [];
                     return (
-                      <div key={`e-${r.etapaId}`} className="flex items-center border-b border-gray-100" style={{ height: 30, background: '#f9fafb' }}>
-                        <div style={{ width: LABEL_W, flexShrink: 0 }} className="px-3 flex items-center justify-between gap-2">
-                          <span className="text-xs font-bold text-gray-700 uppercase tracking-wide truncate">
+                      <div key={`e-${r.etapaId}`} className="flex items-center border-b border-gray-200" style={{ height: ETAPA_H, background: '#F3F4F6' }}>
+                        <div style={{ width: LABEL_W, flexShrink: 0 }} className="px-3 flex flex-col justify-center gap-0.5">
+                          <span className="text-sm font-bold text-gray-800 uppercase tracking-wide truncate">
                             {r.zakazkaNazov} — {r.nazov}
                           </span>
+                          <span className="text-xs text-gray-500">
+                            {r.povrchOd && <>Povrchová úprava od {fmt(r.povrchOd)}</>}
+                            {r.povrchDni > 0 && <> · {r.povrchDni} dní</>}
+                          </span>
                         </div>
-                        <div className="flex-1 px-2 text-xs text-gray-500 whitespace-nowrap">
-                          {r.povrchOd && <>Povrchová úprava od: <strong className="text-gray-700">{fmt(r.povrchOd)}</strong></>}
-                          {r.povrchDni > 0 && <span className="ml-3">Trvanie: <strong className="text-gray-700">{r.povrchDni} dní</strong></span>}
+                        <div className="flex-1 relative" style={{ height: ETAPA_H }}>
+                          {povrchSeg.map(([segOd, segDo], i) => {
+                            const segStartP = p(segOd);
+                            const segKoniecP = p(segDo) + (1 / rozsahDni) * 100;
+                            if (segKoniecP < 0 || segStartP > 100) return null;
+                            return (
+                              <div key={i}
+                                title={`Povrchová úprava: ${fmt(segOd)} – ${fmt(segDo)}`}
+                                style={{
+                                  position: 'absolute',
+                                  left: `${Math.max(0, segStartP)}%`,
+                                  width: `${Math.max(0.5, Math.min(100, segKoniecP) - Math.max(0, segStartP))}%`,
+                                  top: '50%', transform: 'translateY(-50%)',
+                                  height: BAR_H, borderRadius: 3,
+                                  background: '#7C3AED'
+                                }}
+                              />
+                            );
+                          })}
                         </div>
                       </div>
                     );
@@ -258,33 +296,33 @@ export default function Timeline({ onSpat }) {
                       <div style={{ width: LABEL_W, flexShrink: 0 }} className="px-3 flex items-center gap-2 border-r border-gray-200 bg-white">
                         <div className="flex-1 min-w-0">
                           <p className="text-sm text-gray-700 truncate">{r.castNazov}</p>
-                          <p className="text-[10px] text-gray-400">
+                          <p className="text-xs text-gray-400">
                             {r.hodiny != null ? `${Math.round(r.hodiny * 10) / 10} h` : ''}
                             {r.dni != null ? ` · ${r.dni} dní` : ''}
                           </p>
-                          <div className="flex items-center gap-1 mt-0.5">
+                          <div className="flex items-center gap-1.5 mt-1">
                             <input type="date" value={r.startOverride || r.start || ''}
                               onChange={e => handleNastavStart(r.castId, e.target.value)}
-                              className={`text-[10px] border rounded px-1 py-0.5 ${r.blokovane ? 'border-red-300' : 'border-gray-200'}`} />
+                              className={`w-32 text-xs border rounded px-1.5 py-1 ${r.blokovane ? 'border-red-300' : 'border-gray-300'}`} />
                             {r.startOverride && (
-                              <button onClick={() => handleNastavStart(r.castId, null)} className="text-[10px] text-blue-500 hover:underline">
+                              <button onClick={() => handleNastavStart(r.castId, null)} className="text-xs text-blue-500 hover:underline whitespace-nowrap">
                                 zrušiť
                               </button>
                             )}
                           </div>
                           {r.blokovane && (
-                            <p className="text-[10px] text-red-500 font-medium mt-0.5">Stojí — chýbajú ľudia</p>
+                            <p className="text-xs text-red-500 font-medium mt-0.5">Stojí — chýbajú ľudia</p>
                           )}
                         </div>
                         <div className="flex items-center gap-1 flex-shrink-0">
                           <button onClick={() => handleZmenPocetLudi(r.castId, -1)} disabled={ukladam === r.castId}
-                            className="p-0.5 rounded border border-gray-300 hover:bg-gray-100 disabled:opacity-50">
-                            <Minus size={12} />
+                            className="p-1 rounded border border-gray-300 hover:bg-gray-100 disabled:opacity-50">
+                            <Minus size={14} />
                           </button>
-                          <span className="text-xs font-medium w-4 text-center">{r.pocetLudi}</span>
+                          <span className="text-sm font-medium w-5 text-center">{r.pocetLudi}</span>
                           <button onClick={() => handleZmenPocetLudi(r.castId, 1)} disabled={ukladam === r.castId || r.pocetLudi >= maxKapacita}
-                            className="p-0.5 rounded border border-gray-300 hover:bg-gray-100 disabled:opacity-50">
-                            <Plus size={12} />
+                            className="p-1 rounded border border-gray-300 hover:bg-gray-100 disabled:opacity-50">
+                            <Plus size={14} />
                           </button>
                         </div>
                       </div>
@@ -301,7 +339,7 @@ export default function Timeline({ onSpat }) {
                                 left: `${Math.max(0, segStartP)}%`,
                                 width: `${Math.max(0.5, Math.min(100, segKoniecP) - Math.max(0, segStartP))}%`,
                                 top: '50%', transform: 'translateY(-50%)',
-                                height: 16, borderRadius: 3,
+                                height: BAR_H, borderRadius: 3,
                                 background: '#3B6D11'
                               }}
                             />
@@ -325,7 +363,7 @@ export default function Timeline({ onSpat }) {
                           type="number" min="0"
                           value={kapacita[key] ?? DEFAULT_KAPACITA}
                           onChange={e => handleZmenKapacity(key, e.target.value)}
-                          className="w-7 text-center text-xs border border-gray-200 rounded"
+                          className="w-9 text-center text-xs border border-gray-200 rounded"
                         />
                       </div>
                     );
