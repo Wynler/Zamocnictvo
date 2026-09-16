@@ -25,6 +25,30 @@ function jePracovny(date) {
   return den !== 0 && den !== 6;
 }
 
+// Rozdelí interval start–koniec na súvislé úseky pracovných dní (víkendy = medzera)
+function pracovneSegmenty(startIso, koniecIso) {
+  const koniec = new Date(koniecIso);
+  koniec.setHours(0, 0, 0, 0);
+  let d = new Date(startIso);
+  d.setHours(0, 0, 0, 0);
+  const segmenty = [];
+  let segStart = null;
+  let posledny = null;
+
+  while (d <= koniec) {
+    if (jePracovny(d)) {
+      if (!segStart) segStart = new Date(d);
+      posledny = new Date(d);
+    } else if (segStart) {
+      segmenty.push([iso(segStart), iso(posledny)]);
+      segStart = null;
+    }
+    d = new Date(d.getTime() + DAY);
+  }
+  if (segStart) segmenty.push([iso(segStart), iso(posledny)]);
+  return segmenty;
+}
+
 export default function Timeline({ onSpat }) {
   const [riadky, setRiadky] = useState([]);
   const [kapacita, setKapacita] = useState({});
@@ -77,6 +101,11 @@ export default function Timeline({ onSpat }) {
     return mapa;
   }, [riadky, dni]);
 
+  const maxKapacita = useMemo(
+    () => Math.max(DEFAULT_KAPACITA, ...Object.values(kapacita), 0),
+    [kapacita]
+  );
+
   async function handleZmenKapacity(datumIso, hodnota) {
     const cislo = parseInt(hodnota) || 0;
     setKapacita(prev => ({ ...prev, [datumIso]: cislo }));
@@ -89,7 +118,7 @@ export default function Timeline({ onSpat }) {
 
   async function handleZmenPocetLudi(castId, delta) {
     const r = riadky.find(r => r.castId === castId);
-    const nove = Math.max(0, (r?.pocetLudi || 0) + delta);
+    const nove = Math.min(maxKapacita, Math.max(0, (r?.pocetLudi || 0) + delta));
     setUkladam(castId);
     try {
       await aktualizujCast(castId, { pocetLudi: nove });
@@ -127,7 +156,7 @@ export default function Timeline({ onSpat }) {
       videneEtapy.add(r.etapaId);
       zoskupene.push({
         typ: 'etapa', etapaId: r.etapaId, nazov: r.etapaNazov, zakazkaNazov: r.zakazkaNazov,
-        koniecMontaze: r.etapaKoniecMontaze, povrchDni: r.etapaPovrchDni
+        povrchOd: r.etapaPovrchOd, povrchDni: r.etapaPovrchDni
       });
     }
     zoskupene.push({ typ: 'cast', ...r });
@@ -215,15 +244,14 @@ export default function Timeline({ onSpat }) {
                           </span>
                         </div>
                         <div className="flex-1 px-2 text-xs text-gray-500 whitespace-nowrap">
-                          {r.koniecMontaze && <>Koniec montáže: <strong className="text-gray-700">{fmt(r.koniecMontaze)}</strong></>}
-                          {r.povrchDni > 0 && <span className="ml-3">Povrchovka: <strong className="text-gray-700">{r.povrchDni} dní</strong></span>}
+                          {r.povrchOd && <>Povrchová úprava od: <strong className="text-gray-700">{fmt(r.povrchOd)}</strong></>}
+                          {r.povrchDni > 0 && <span className="ml-3">Trvanie: <strong className="text-gray-700">{r.povrchDni} dní</strong></span>}
                         </div>
                       </div>
                     );
                   }
 
-                  const startP = r.start ? p(r.start) : null;
-                  const koniecP = r.koniec ? p(r.koniec) : null;
+                  const segmenty = (!r.blokovane && r.start && r.koniec) ? pracovneSegmenty(r.start, r.koniec) : [];
 
                   return (
                     <div key={r.castId} className="flex items-center border-b border-gray-100 hover:bg-white" style={{ height: ROW_H }}>
@@ -234,10 +262,18 @@ export default function Timeline({ onSpat }) {
                             {r.hodiny != null ? `${Math.round(r.hodiny * 10) / 10} h` : ''}
                             {r.dni != null ? ` · ${r.dni} dní` : ''}
                           </p>
-                          {r.startOverride && (
-                            <button onClick={() => handleNastavStart(r.castId, null)} className="text-[10px] text-blue-500 hover:underline">
-                              ručný štart · zrušiť
-                            </button>
+                          <div className="flex items-center gap-1 mt-0.5">
+                            <input type="date" value={r.startOverride || r.start || ''}
+                              onChange={e => handleNastavStart(r.castId, e.target.value)}
+                              className={`text-[10px] border rounded px-1 py-0.5 ${r.blokovane ? 'border-red-300' : 'border-gray-200'}`} />
+                            {r.startOverride && (
+                              <button onClick={() => handleNastavStart(r.castId, null)} className="text-[10px] text-blue-500 hover:underline">
+                                zrušiť
+                              </button>
+                            )}
+                          </div>
+                          {r.blokovane && (
+                            <p className="text-[10px] text-red-500 font-medium mt-0.5">Stojí — chýbajú ľudia</p>
                           )}
                         </div>
                         <div className="flex items-center gap-1 flex-shrink-0">
@@ -246,35 +282,31 @@ export default function Timeline({ onSpat }) {
                             <Minus size={12} />
                           </button>
                           <span className="text-xs font-medium w-4 text-center">{r.pocetLudi}</span>
-                          <button onClick={() => handleZmenPocetLudi(r.castId, 1)} disabled={ukladam === r.castId}
+                          <button onClick={() => handleZmenPocetLudi(r.castId, 1)} disabled={ukladam === r.castId || r.pocetLudi >= maxKapacita}
                             className="p-0.5 rounded border border-gray-300 hover:bg-gray-100 disabled:opacity-50">
                             <Plus size={12} />
                           </button>
                         </div>
                       </div>
                       <div className="flex-1 relative" style={{ height: ROW_H }}>
-                        {r.blokovane ? (
-                          <div className="absolute inset-0 flex items-center px-2 gap-2">
-                            <span className="text-xs text-red-500 font-medium whitespace-nowrap">Stojí — nastav štart</span>
-                            <input type="date" value={r.startOverride || ''}
-                              onChange={e => handleNastavStart(r.castId, e.target.value)}
-                              className="text-xs border border-gray-300 rounded px-1 py-0.5" />
-                          </div>
-                        ) : (
-                          startP !== null && koniecP !== null && koniecP >= 0 && startP <= 100 && (
-                            <div
-                              title={`${fmt(r.start)} – ${fmt(r.koniec)}`}
+                        {segmenty.map(([segOd, segDo], i) => {
+                          const segStartP = p(segOd);
+                          const segKoniecP = p(segDo) + (1 / rozsahDni) * 100; // segment trvá do konca posledného dňa
+                          if (segKoniecP < 0 || segStartP > 100) return null;
+                          return (
+                            <div key={i}
+                              title={`${fmt(segOd)} – ${fmt(segDo)}`}
                               style={{
                                 position: 'absolute',
-                                left: `${Math.max(0, startP)}%`,
-                                width: `${Math.max(1, Math.min(100, koniecP) - Math.max(0, startP))}%`,
+                                left: `${Math.max(0, segStartP)}%`,
+                                width: `${Math.max(0.5, Math.min(100, segKoniecP) - Math.max(0, segStartP))}%`,
                                 top: '50%', transform: 'translateY(-50%)',
                                 height: 16, borderRadius: 3,
                                 background: '#3B6D11'
                               }}
                             />
-                          )
-                        )}
+                          );
+                        })}
                       </div>
                     </div>
                   );
