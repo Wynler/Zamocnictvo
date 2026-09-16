@@ -5,6 +5,7 @@ import { vytvorCast, nacitajCastiEtapy, nacitajZaradenie } from '../../lib/api/c
 
 export default function RozdelitEtapuModal({ etapa, onClose, onSuccess }) {
   const [nazovCasti, setNazovCasti] = useState('');
+  const [pocetLudiCasti, setPocetLudiCasti] = useState(etapa.pocetLudi || '');
   const [vyber, setVyber] = useState({});
   const [zaradenie, setZaradenie] = useState({});
   const [pocetCasti, setPocetCasti] = useState(0);
@@ -78,7 +79,7 @@ export default function RozdelitEtapuModal({ etapa, onClose, onSuccess }) {
     setChyba('');
 
     try {
-      await vytvorCast(etapa.id, nazovCasti.trim(), pocetCasti + 1, priradenia);
+      await vytvorCast(etapa.id, nazovCasti.trim(), pocetCasti + 1, priradenia, pocetLudiCasti ? parseInt(pocetLudiCasti) : null);
       setStav('success');
       setTimeout(() => { onSuccess(); onClose(); }, 1000);
     } catch (err) {
@@ -105,15 +106,27 @@ export default function RozdelitEtapuModal({ etapa, onClose, onSuccess }) {
         </div>
 
         {/* Názov časti */}
-        <div className="px-6 pt-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Názov novej časti</label>
-          <input
-            type="text"
-            value={nazovCasti}
-            onChange={e => setNazovCasti(e.target.value)}
-            placeholder="napr. Časť 1 — výroba január"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+        <div className="px-6 pt-4 grid grid-cols-3 gap-3">
+          <div className="col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Názov novej časti</label>
+            <input
+              type="text"
+              value={nazovCasti}
+              onChange={e => setNazovCasti(e.target.value)}
+              placeholder="napr. Časť 1 — výroba január"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Počet ľudí</label>
+            <input
+              type="number" min="0" step="1"
+              value={pocetLudiCasti}
+              onChange={e => setPocetLudiCasti(e.target.value)}
+              placeholder={etapa.pocetLudi ? String(etapa.pocetLudi) : '—'}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
         </div>
 
         {/* Tabuľka dielcov */}

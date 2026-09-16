@@ -232,6 +232,26 @@ ALTER TABLE etapy
 bola farba už vyplnená pôvodnými hodnotami, sa po tejto zmene zobrazí ako nevyplnená —
 treba ju v projekte znova nastaviť.
 
+### Timeline výroby na úrovni častí
+
+Ďalšia aditívna migrácia — pridáva počet ľudí a ručný posun štartu na časť etapy,
+a tabuľku pre dennú kapacitu dielne (koľko ľudí máš k dispozícii v konkrétny deň,
+predvolene 8):
+
+```sql
+ALTER TABLE casti_etapy
+  ADD COLUMN IF NOT EXISTS pocet_ludi INTEGER,
+  ADD COLUMN IF NOT EXISTS start_override DATE;
+
+CREATE TABLE IF NOT EXISTS kapacita_dielne (
+  datum DATE PRIMARY KEY,
+  pocet_ludi INTEGER NOT NULL DEFAULT 8
+);
+
+ALTER TABLE kapacita_dielne ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Povoliť všetko pre kapacita_dielne" ON kapacita_dielne FOR ALL USING (true) WITH CHECK (true);
+```
+
 ## 🔧 Ďalšie možnosti
 
 ### Pridanie autentifikácie

@@ -70,7 +70,7 @@ export default function ZoznamZakaziek({
               className="flex items-center gap-2 bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-800"
             >
               <BarChart2 size={20} />
-              Timeline
+              Timeline výroby
             </button>
             <button
               onClick={onNovaZakazka}
