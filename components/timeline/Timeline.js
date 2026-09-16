@@ -4,13 +4,14 @@ import { ArrowLeft, RefreshCw, ChevronLeft, ChevronRight, Minus, Plus } from 'lu
 import { nacitajTimelineVyroby } from '../../lib/api/timeline';
 import { aktualizujCast } from '../../lib/api/casti';
 import { nastavKapacitu } from '../../lib/api/kapacita';
+import { iso, jePracovny, pridajPracovneDni } from '../../lib/planovanie/kalendar';
 
 const DAY = 86400000;
 const DEFAULT_KAPACITA = 8;
 const LABEL_W = 300;
 const DAY_W = 48;
 const ROW_H = 60;
-const ETAPA_H = 48;
+const ETAPA_H = 34;
 const BAR_H = 22;
 
 const VIKEND_PRUH = 'repeating-linear-gradient(135deg, #D6D9DE 0px, #D6D9DE 4px, #E9EBEE 4px, #E9EBEE 10px)';
@@ -18,15 +19,6 @@ const VIKEND_PRUH = 'repeating-linear-gradient(135deg, #D6D9DE 0px, #D6D9DE 4px,
 function fmt(date) {
   const d = new Date(date);
   return `${d.getDate()}.${d.getMonth() + 1}.`;
-}
-
-function iso(date) {
-  return new Date(date).toISOString().split('T')[0];
-}
-
-function jePracovny(date) {
-  const den = new Date(date).getDay();
-  return den !== 0 && den !== 6;
 }
 
 // Rozdelí interval start–koniec na súvislé úseky pracovných dní (víkendy = medzera)
@@ -158,17 +150,14 @@ export default function Timeline({ onSpat }) {
   for (const r of riadky) {
     if (!videneEtapy.has(r.etapaId)) {
       videneEtapy.add(r.etapaId);
-      zoskupene.push({
-        typ: 'etapa', etapaId: r.etapaId, nazov: r.etapaNazov, zakazkaNazov: r.zakazkaNazov,
-        povrchOd: r.etapaPovrchOd, povrchDo: r.etapaPovrchDo, povrchDni: r.etapaPovrchDni
-      });
+      zoskupene.push({ typ: 'etapa', etapaId: r.etapaId, nazov: r.etapaNazov, zakazkaNazov: r.zakazkaNazov });
     }
     zoskupene.push({ typ: 'cast', ...r });
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-gray-50 p-4">
+      <div className="max-w-none">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-4">
             <button onClick={onSpat} className="flex items-center gap-2 text-blue-600 hover:text-blue-700">
@@ -253,43 +242,22 @@ export default function Timeline({ onSpat }) {
                   </div>
                 ) : zoskupene.map((r) => {
                   if (r.typ === 'etapa') {
-                    const povrchSeg = (r.povrchOd && r.povrchDo) ? pracovneSegmenty(r.povrchOd, r.povrchDo) : [];
                     return (
                       <div key={`e-${r.etapaId}`} className="flex items-center border-b border-gray-200" style={{ height: ETAPA_H, background: '#F3F4F6' }}>
-                        <div style={{ width: LABEL_W, flexShrink: 0 }} className="px-3 flex flex-col justify-center gap-0.5">
+                        <div style={{ width: LABEL_W, flexShrink: 0 }} className="px-3">
                           <span className="text-sm font-bold text-gray-800 uppercase tracking-wide truncate">
                             {r.zakazkaNazov} — {r.nazov}
                           </span>
-                          <span className="text-xs text-gray-500">
-                            {r.povrchOd && <>Povrchová úprava od {fmt(r.povrchOd)}</>}
-                            {r.povrchDni > 0 && <> · {r.povrchDni} dní</>}
-                          </span>
                         </div>
-                        <div className="flex-1 relative" style={{ height: ETAPA_H }}>
-                          {povrchSeg.map(([segOd, segDo], i) => {
-                            const segStartP = p(segOd);
-                            const segKoniecP = p(segDo) + (1 / rozsahDni) * 100;
-                            if (segKoniecP < 0 || segStartP > 100) return null;
-                            return (
-                              <div key={i}
-                                title={`Povrchová úprava: ${fmt(segOd)} – ${fmt(segDo)}`}
-                                style={{
-                                  position: 'absolute',
-                                  left: `${Math.max(0, segStartP)}%`,
-                                  width: `${Math.max(0.5, Math.min(100, segKoniecP) - Math.max(0, segStartP))}%`,
-                                  top: '50%', transform: 'translateY(-50%)',
-                                  height: BAR_H, borderRadius: 3,
-                                  background: '#7C3AED'
-                                }}
-                              />
-                            );
-                          })}
-                        </div>
+                        <div className="flex-1" />
                       </div>
                     );
                   }
 
-                  const segmenty = (!r.blokovane && r.start && r.koniec) ? pracovneSegmenty(r.start, r.koniec) : [];
+                  const vyrobaSeg = (!r.blokovane && r.start && r.koniec) ? pracovneSegmenty(r.start, r.koniec) : [];
+                  const povrchOd = (!r.blokovane && r.koniec) ? r.koniec : null;
+                  const povrchDo = (povrchOd && r.etapaPovrchDni > 0) ? pridajPracovneDni(povrchOd, r.etapaPovrchDni) : null;
+                  const povrchSeg = (povrchOd && povrchDo) ? pracovneSegmenty(povrchOd, povrchDo) : [];
 
                   return (
                     <div key={r.castId} className="flex items-center border-b border-gray-100 hover:bg-white" style={{ height: ROW_H }}>
@@ -299,6 +267,7 @@ export default function Timeline({ onSpat }) {
                           <p className="text-xs text-gray-400">
                             {r.hodiny != null ? `${Math.round(r.hodiny * 10) / 10} h` : ''}
                             {r.dni != null ? ` · ${r.dni} dní` : ''}
+                            {r.etapaPovrchDni > 0 ? ` · povrch ${r.etapaPovrchDni} dní` : ''}
                           </p>
                           <div className="flex items-center gap-1.5 mt-1">
                             <input type="date" value={r.startOverride || r.start || ''}
@@ -327,13 +296,13 @@ export default function Timeline({ onSpat }) {
                         </div>
                       </div>
                       <div className="flex-1 relative" style={{ height: ROW_H }}>
-                        {segmenty.map(([segOd, segDo], i) => {
+                        {vyrobaSeg.map(([segOd, segDo], i) => {
                           const segStartP = p(segOd);
-                          const segKoniecP = p(segDo) + (1 / rozsahDni) * 100; // segment trvá do konca posledného dňa
+                          const segKoniecP = p(segDo) + (1 / rozsahDni) * 100;
                           if (segKoniecP < 0 || segStartP > 100) return null;
                           return (
-                            <div key={i}
-                              title={`${fmt(segOd)} – ${fmt(segDo)}`}
+                            <div key={`v-${i}`}
+                              title={`Výroba: ${fmt(segOd)} – ${fmt(segDo)}`}
                               style={{
                                 position: 'absolute',
                                 left: `${Math.max(0, segStartP)}%`,
@@ -341,6 +310,24 @@ export default function Timeline({ onSpat }) {
                                 top: '50%', transform: 'translateY(-50%)',
                                 height: BAR_H, borderRadius: 3,
                                 background: '#3B6D11'
+                              }}
+                            />
+                          );
+                        })}
+                        {povrchSeg.map(([segOd, segDo], i) => {
+                          const segStartP = p(segOd);
+                          const segKoniecP = p(segDo) + (1 / rozsahDni) * 100;
+                          if (segKoniecP < 0 || segStartP > 100) return null;
+                          return (
+                            <div key={`p-${i}`}
+                              title={`Povrchová úprava: ${fmt(segOd)} – ${fmt(segDo)}`}
+                              style={{
+                                position: 'absolute',
+                                left: `${Math.max(0, segStartP)}%`,
+                                width: `${Math.max(0.5, Math.min(100, segKoniecP) - Math.max(0, segStartP))}%`,
+                                top: '50%', transform: 'translateY(-50%)',
+                                height: BAR_H, borderRadius: 3,
+                                background: '#7C3AED'
                               }}
                             />
                           );

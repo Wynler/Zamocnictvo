@@ -5,6 +5,7 @@ import ImportModal from '../import/ImportModal';
 import RozdelitEtapuModal from '../casti/RozdelitEtapuModal';
 import PrehladCasti from '../casti/PrehladCasti';
 import { vypocitajVyrobnyPlan, ZINKOVANIE_DNI, FARBA_DNI, PIESKOVANIE_DNI_DEFAULT } from '../../lib/planovanie/vyrobnyPlan';
+import { iso } from '../../lib/planovanie/kalendar';
 
 function formatDatum(datumStr) {
   if (!datumStr) return '—';
@@ -474,7 +475,7 @@ export default function DetailEtapy({
           const dnes = new Date();
           dnes.setHours(0,0,0,0);
           const datumKonca = zostDni > 0
-            ? (() => { const d = new Date(dnes); d.setDate(d.getDate() + zostDni); return d.toISOString().split('T')[0]; })()
+            ? (() => { const d = new Date(dnes); d.setDate(d.getDate() + zostDni); return iso(d); })()
             : null;
           const ok = datumKonca && aktualnaEtapa.deadline ? datumKonca <= aktualnaEtapa.deadline : null;
 
