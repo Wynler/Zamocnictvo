@@ -125,7 +125,10 @@ export default function Timeline({ onSpat }) {
   for (const r of riadky) {
     if (!videneEtapy.has(r.etapaId)) {
       videneEtapy.add(r.etapaId);
-      zoskupene.push({ typ: 'etapa', etapaId: r.etapaId, nazov: r.etapaNazov, zakazkaNazov: r.zakazkaNazov });
+      zoskupene.push({
+        typ: 'etapa', etapaId: r.etapaId, nazov: r.etapaNazov, zakazkaNazov: r.zakazkaNazov,
+        koniecMontaze: r.etapaKoniecMontaze, povrchDni: r.etapaPovrchDni
+      });
     }
     zoskupene.push({ typ: 'cast', ...r });
   }
@@ -166,131 +169,157 @@ export default function Timeline({ onSpat }) {
           </div>
 
           <div style={{ overflowX: 'auto' }}>
-            <div style={{ minWidth: LABEL_W + dni.length * DAY_W }}>
+            <div style={{ minWidth: LABEL_W + dni.length * DAY_W, position: 'relative' }}>
 
-              {/* Dátumy */}
-              <div className="flex border-b border-gray-200">
-                <div style={{ width: LABEL_W, flexShrink: 0 }} className="border-r border-gray-200" />
-                {dni.map((d, i) => {
-                  const isTod = d.toDateString() === today.toDateString();
-                  return (
-                    <div key={i} style={{ width: DAY_W, flexShrink: 0 }}
-                      className={`text-center py-1 text-xs ${isTod ? 'font-bold text-gray-900 bg-blue-50' : jePracovny(d) ? 'text-gray-500' : 'text-gray-300'}`}>
-                      {fmt(d)}
-                    </div>
-                  );
-                })}
+              {/* Podfarbenie víkendov + čiara dneška — cez celú výšku tabuľky */}
+              <div style={{ position: 'absolute', left: LABEL_W, right: 0, top: 0, bottom: 0, zIndex: 0, pointerEvents: 'none' }}>
+                {dni.map((d, i) => !jePracovny(d) && (
+                  <div key={i} style={{
+                    position: 'absolute', left: `${(i / dni.length) * 100}%`, width: `${(1 / dni.length) * 100}%`,
+                    top: 0, bottom: 0, background: '#F3F4F6'
+                  }} />
+                ))}
+                {todayP >= 0 && todayP <= 100 && (
+                  <div style={{ position: 'absolute', left: `${todayP}%`, top: 0, bottom: 0, width: 2, background: '#DC2626' }} />
+                )}
               </div>
 
-              {/* Kapacita / deň — editovateľná */}
-              <div className="flex border-b border-gray-200 bg-gray-50">
-                <div style={{ width: LABEL_W, flexShrink: 0 }} className="border-r border-gray-200 px-3 py-1.5 text-xs text-gray-500 flex items-center">
-                  Kapacita / deň
-                </div>
-                {dni.map((d, i) => {
-                  const key = iso(d);
-                  return (
-                    <div key={i} style={{ width: DAY_W, flexShrink: 0 }} className="py-1 flex justify-center">
-                      <input
-                        type="number" min="0"
-                        value={kapacita[key] ?? DEFAULT_KAPACITA}
-                        onChange={e => handleZmenKapacity(key, e.target.value)}
-                        className="w-7 text-center text-xs border border-gray-200 rounded"
-                      />
-                    </div>
-                  );
-                })}
-              </div>
+              <div style={{ position: 'relative', zIndex: 1 }}>
 
-              {/* Zadelení / deň */}
-              <div className="flex border-b border-gray-200">
-                <div style={{ width: LABEL_W, flexShrink: 0 }} className="border-r border-gray-200 px-3 py-1.5 text-xs text-gray-500 flex items-center">
-                  Zadelení / deň
-                </div>
-                {dni.map((d, i) => {
-                  const key = iso(d);
-                  const zadeleni = zadeleniPoDnoch[key] || 0;
-                  const kap = kapacita[key] ?? DEFAULT_KAPACITA;
-                  const over = zadeleni > kap;
-                  return (
-                    <div key={i} style={{ width: DAY_W, flexShrink: 0 }}
-                      className={`py-1.5 text-center text-xs font-medium ${over ? 'text-red-600 bg-red-50' : 'text-gray-600'}`}>
-                      {zadeleni}
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Riadky: etapy + časti */}
-              {zoskupene.length === 0 ? (
-                <div className="p-8 text-center text-gray-400 text-sm">
-                  Žiadne časti na naplánovanie. Rozdeľ etapu na časti v jej detaile.
-                </div>
-              ) : zoskupene.map((r) => {
-                if (r.typ === 'etapa') {
-                  return (
-                    <div key={`e-${r.etapaId}`} className="flex items-center border-b border-gray-100" style={{ height: 28, background: '#f9fafb' }}>
-                      <div style={{ width: LABEL_W, flexShrink: 0 }} className="px-3 text-xs font-bold text-gray-700 uppercase tracking-wide truncate">
-                        {r.zakazkaNazov} — {r.nazov}
+                {/* Dátumy */}
+                <div className="flex border-b border-gray-200">
+                  <div style={{ width: LABEL_W, flexShrink: 0 }} className="border-r border-gray-200" />
+                  {dni.map((d, i) => {
+                    const isTod = d.toDateString() === today.toDateString();
+                    return (
+                      <div key={i} style={{ width: DAY_W, flexShrink: 0 }}
+                        className={`text-center py-1 text-xs ${isTod ? 'font-bold text-red-600' : jePracovny(d) ? 'text-gray-500' : 'text-gray-400'}`}>
+                        {fmt(d)}
                       </div>
-                    </div>
-                  );
-                }
+                    );
+                  })}
+                </div>
 
-                const startP = r.start ? p(r.start) : null;
-                const koniecP = r.koniec ? p(r.koniec) : null;
+                {/* Riadky: etapy + časti */}
+                {zoskupene.length === 0 ? (
+                  <div className="p-8 text-center text-gray-400 text-sm">
+                    Žiadne časti na naplánovanie. Rozdeľ etapu na časti v jej detaile.
+                  </div>
+                ) : zoskupene.map((r) => {
+                  if (r.typ === 'etapa') {
+                    return (
+                      <div key={`e-${r.etapaId}`} className="flex items-center border-b border-gray-100" style={{ height: 30, background: '#f9fafb' }}>
+                        <div style={{ width: LABEL_W, flexShrink: 0 }} className="px-3 flex items-center justify-between gap-2">
+                          <span className="text-xs font-bold text-gray-700 uppercase tracking-wide truncate">
+                            {r.zakazkaNazov} — {r.nazov}
+                          </span>
+                        </div>
+                        <div className="flex-1 px-2 text-xs text-gray-500 whitespace-nowrap">
+                          {r.koniecMontaze && <>Koniec montáže: <strong className="text-gray-700">{fmt(r.koniecMontaze)}</strong></>}
+                          {r.povrchDni > 0 && <span className="ml-3">Povrchovka: <strong className="text-gray-700">{r.povrchDni} dní</strong></span>}
+                        </div>
+                      </div>
+                    );
+                  }
 
-                return (
-                  <div key={r.castId} className="flex items-center border-b border-gray-100 hover:bg-gray-50" style={{ height: ROW_H }}>
-                    <div style={{ width: LABEL_W, flexShrink: 0 }} className="px-3 flex items-center gap-2 border-r border-gray-200">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-gray-700 truncate">{r.castNazov}</p>
-                        {r.startOverride && (
-                          <button onClick={() => handleNastavStart(r.castId, null)} className="text-[10px] text-blue-500 hover:underline">
-                            ručný štart · zrušiť
+                  const startP = r.start ? p(r.start) : null;
+                  const koniecP = r.koniec ? p(r.koniec) : null;
+
+                  return (
+                    <div key={r.castId} className="flex items-center border-b border-gray-100 hover:bg-white" style={{ height: ROW_H }}>
+                      <div style={{ width: LABEL_W, flexShrink: 0 }} className="px-3 flex items-center gap-2 border-r border-gray-200 bg-white">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-gray-700 truncate">{r.castNazov}</p>
+                          <p className="text-[10px] text-gray-400">
+                            {r.hodiny != null ? `${Math.round(r.hodiny * 10) / 10} h` : ''}
+                            {r.dni != null ? ` · ${r.dni} dní` : ''}
+                          </p>
+                          {r.startOverride && (
+                            <button onClick={() => handleNastavStart(r.castId, null)} className="text-[10px] text-blue-500 hover:underline">
+                              ručný štart · zrušiť
+                            </button>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          <button onClick={() => handleZmenPocetLudi(r.castId, -1)} disabled={ukladam === r.castId}
+                            className="p-0.5 rounded border border-gray-300 hover:bg-gray-100 disabled:opacity-50">
+                            <Minus size={12} />
                           </button>
+                          <span className="text-xs font-medium w-4 text-center">{r.pocetLudi}</span>
+                          <button onClick={() => handleZmenPocetLudi(r.castId, 1)} disabled={ukladam === r.castId}
+                            className="p-0.5 rounded border border-gray-300 hover:bg-gray-100 disabled:opacity-50">
+                            <Plus size={12} />
+                          </button>
+                        </div>
+                      </div>
+                      <div className="flex-1 relative" style={{ height: ROW_H }}>
+                        {r.blokovane ? (
+                          <div className="absolute inset-0 flex items-center px-2 gap-2">
+                            <span className="text-xs text-red-500 font-medium whitespace-nowrap">Stojí — nastav štart</span>
+                            <input type="date" value={r.startOverride || ''}
+                              onChange={e => handleNastavStart(r.castId, e.target.value)}
+                              className="text-xs border border-gray-300 rounded px-1 py-0.5" />
+                          </div>
+                        ) : (
+                          startP !== null && koniecP !== null && koniecP >= 0 && startP <= 100 && (
+                            <div
+                              title={`${fmt(r.start)} – ${fmt(r.koniec)}`}
+                              style={{
+                                position: 'absolute',
+                                left: `${Math.max(0, startP)}%`,
+                                width: `${Math.max(1, Math.min(100, koniecP) - Math.max(0, startP))}%`,
+                                top: '50%', transform: 'translateY(-50%)',
+                                height: 16, borderRadius: 3,
+                                background: '#3B6D11'
+                              }}
+                            />
+                          )
                         )}
                       </div>
-                      <div className="flex items-center gap-1 flex-shrink-0">
-                        <button onClick={() => handleZmenPocetLudi(r.castId, -1)} disabled={ukladam === r.castId}
-                          className="p-0.5 rounded border border-gray-300 hover:bg-gray-100 disabled:opacity-50">
-                          <Minus size={12} />
-                        </button>
-                        <span className="text-xs font-medium w-4 text-center">{r.pocetLudi}</span>
-                        <button onClick={() => handleZmenPocetLudi(r.castId, 1)} disabled={ukladam === r.castId}
-                          className="p-0.5 rounded border border-gray-300 hover:bg-gray-100 disabled:opacity-50">
-                          <Plus size={12} />
-                        </button>
-                      </div>
                     </div>
-                    <div className="flex-1 relative" style={{ height: ROW_H }}>
-                      {r.blokovane ? (
-                        <div className="absolute inset-0 flex items-center px-2 gap-2">
-                          <span className="text-xs text-red-500 font-medium whitespace-nowrap">Stojí — nastav štart</span>
-                          <input type="date" value={r.startOverride || ''}
-                            onChange={e => handleNastavStart(r.castId, e.target.value)}
-                            className="text-xs border border-gray-300 rounded px-1 py-0.5" />
-                        </div>
-                      ) : (
-                        startP !== null && koniecP !== null && koniecP >= 0 && startP <= 100 && (
-                          <div
-                            title={`${fmt(r.start)} – ${fmt(r.koniec)}`}
-                            style={{
-                              position: 'absolute',
-                              left: `${Math.max(0, startP)}%`,
-                              width: `${Math.max(1, Math.min(100, koniecP) - Math.max(0, startP))}%`,
-                              top: '50%', transform: 'translateY(-50%)',
-                              height: 16, borderRadius: 3,
-                              background: '#3B6D11'
-                            }}
-                          />
-                        )
-                      )}
-                      <div style={{ position: 'absolute', left: `${todayP}%`, top: 0, bottom: 0, width: 1, background: '#111', opacity: 0.25 }} />
-                    </div>
+                  );
+                })}
+
+                {/* Kapacita / deň — editovateľná */}
+                <div className="flex border-t-2 border-gray-300 bg-gray-50">
+                  <div style={{ width: LABEL_W, flexShrink: 0 }} className="border-r border-gray-200 px-3 py-1.5 text-xs text-gray-500 flex items-center">
+                    Kapacita / deň
                   </div>
-                );
-              })}
+                  {dni.map((d, i) => {
+                    const key = iso(d);
+                    return (
+                      <div key={i} style={{ width: DAY_W, flexShrink: 0 }} className="py-1 flex justify-center">
+                        <input
+                          type="number" min="0"
+                          value={kapacita[key] ?? DEFAULT_KAPACITA}
+                          onChange={e => handleZmenKapacity(key, e.target.value)}
+                          className="w-7 text-center text-xs border border-gray-200 rounded"
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Zadelení / deň */}
+                <div className="flex border-b border-gray-200 bg-gray-50">
+                  <div style={{ width: LABEL_W, flexShrink: 0 }} className="border-r border-gray-200 px-3 py-1.5 text-xs text-gray-500 flex items-center">
+                    Zadelení / deň
+                  </div>
+                  {dni.map((d, i) => {
+                    const key = iso(d);
+                    const zadeleni = zadeleniPoDnoch[key] || 0;
+                    const kap = kapacita[key] ?? DEFAULT_KAPACITA;
+                    const over = zadeleni > kap;
+                    return (
+                      <div key={i} style={{ width: DAY_W, flexShrink: 0 }}
+                        className={`py-1.5 text-center text-xs font-medium ${over ? 'text-red-600 bg-red-50' : 'text-gray-600'}`}>
+                        {zadeleni}
+                      </div>
+                    );
+                  })}
+                </div>
+
+              </div>
             </div>
           </div>
         </div>
