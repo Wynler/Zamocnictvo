@@ -49,12 +49,12 @@ export default function ZamocnickaSprava() {
   
   const [novaEtapa, setNovaEtapa] = useState({
     nazov: '', cisloZakazky: '', kontaktnaOsoba: '', telefon: '', email: '', hmotnostPodlaVykazu: '',
-    datumUkoncenia: '', datumVyrobyOd: '', datumVyrobyDo: '',
-    datumPovrchovejUpravyOd: '', datumPovrchovejUpravyDo: '',
-    datumMontazeOd: '', datumMontazeDo: '',
-    zinkovanie: 'nic', farba: 'nic', farbaTon: '', popis: '', stav: 'planovane'
+    deadline: '', datumMaterialu: '', zelanyStartVyroby: '', clovekohod: '', pocetLudi: '',
+    zinkovanie: 'nic', zinkovanieDni: '', farba: 'nic', farbaDni: '', farbaTon: '',
+    pieskovanie: false, pieskovanieDni: '', montazDni: '',
+    popis: '', stav: 'planovane'
   });
-  
+
   const [novyDielec, setNovyDielec] = useState({
     nazov: '', mnozstvo: '', jednotka: 'm', poznamka: ''
   });
@@ -161,10 +161,10 @@ export default function ZamocnickaSprava() {
       setZobrazenie('detail');
       setNovaEtapa({
         nazov: '', cisloZakazky: '', kontaktnaOsoba: '', telefon: '', email: '', hmotnostPodlaVykazu: '',
-        datumUkoncenia: '', datumVyrobyOd: '', datumVyrobyDo: '',
-        datumPovrchovejUpravyOd: '', datumPovrchovejUpravyDo: '',
-        datumMontazeOd: '', datumMontazeDo: '',
-        zinkovanie: 'nic', farba: 'nic', farbaTon: '', popis: '', stav: 'planovane'
+        deadline: '', datumMaterialu: '', zelanyStartVyroby: '', clovekohod: '', pocetLudi: '',
+        zinkovanie: 'nic', zinkovanieDni: '', farba: 'nic', farbaDni: '', farbaTon: '',
+        pieskovanie: false, pieskovanieDni: '', montazDni: '',
+        popis: '', stav: 'planovane'
       });
     } catch (error) {
       alert('Chyba pri pridávaní projektu: ' + error.message);

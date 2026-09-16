@@ -1,4 +1,11 @@
-export default function NovaEtapa({ 
+import { vypocitajVyrobnyPlan, ZINKOVANIE_DNI, FARBA_DNI, PIESKOVANIE_DNI_DEFAULT } from '../../lib/planovanie/vyrobnyPlan';
+
+function formatDatum(datumStr) {
+  if (!datumStr) return '—';
+  return new Date(datumStr).toLocaleDateString('sk-SK');
+}
+
+export default function NovaEtapa({
   aktualnaZakazka,
   novaEtapa,
   setNovaEtapa,
@@ -13,23 +20,7 @@ export default function NovaEtapa({
     'dokoncene': { label: 'Dokončené', farba: 'bg-green-100 text-green-700' }
   };
 
-  // Vypočíta reálny dátum konca
-  function vypocitajDatumKonca() {
-    if (!novaEtapa.datumZaciatku || !novaEtapa.clovekohod || !novaEtapa.pocetLudi) return null;
-    const dni = Math.ceil(parseFloat(novaEtapa.clovekohod) / (parseInt(novaEtapa.pocetLudi) * 8));
-    const datum = new Date(novaEtapa.datumZaciatku);
-    datum.setDate(datum.getDate() + dni);
-    return datum.toISOString().split('T')[0];
-  }
-
-  function semafor() {
-    const koniec = vypocitajDatumKonca();
-    if (!koniec || !novaEtapa.deadline) return null;
-    return koniec <= novaEtapa.deadline ? 'ok' : 'pozor';
-  }
-
-  const datumKonca = vypocitajDatumKonca();
-  const stavSemafora = semafor();
+  const plan = vypocitajVyrobnyPlan(novaEtapa);
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -37,7 +28,7 @@ export default function NovaEtapa({
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-2xl font-bold text-gray-800 mb-2">Nový projekt</h2>
           <p className="text-gray-600 mb-6">Zákazka: {aktualnaZakazka.nazov}</p>
-          
+
           <div className="space-y-6">
             {/* ZÁKLADNÉ */}
             <div className="border-b pb-4">
@@ -80,143 +71,172 @@ export default function NovaEtapa({
               </div>
             </div>
 
-            {/* TIMELINE */}
+            {/* TERMÍN OD ZÁKAZNÍKA */}
             <div className="border-b pb-4">
-              <h3 className="text-lg font-semibold text-gray-700 mb-4">Timeline</h3>
+              <h3 className="text-lg font-semibold text-gray-700 mb-4">Termín od zákazníka</h3>
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Dátum začiatku</label>
-                  <input type="date" value={novaEtapa.datumZaciatku || ''}
-                    onChange={(e) => setNovaEtapa({...novaEtapa, datumZaciatku: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Deadline (požadovaný dátum)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Zmluvný termín odovzdania</label>
                   <input type="date" value={novaEtapa.deadline || ''}
                     onChange={(e) => setNovaEtapa({...novaEtapa, deadline: e.target.value})}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
                 </div>
+              </div>
+            </div>
+
+            {/* MATERIÁL A VÝROBA */}
+            <div className="border-b pb-4">
+              <h3 className="text-lg font-semibold text-gray-700 mb-4">Materiál a výroba</h3>
+              <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Človekodiny celkom</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Dátum materiálu (kedy bude k dispozícii)</label>
+                  <input type="date" value={novaEtapa.datumMaterialu || ''}
+                    onChange={(e) => setNovaEtapa({...novaEtapa, datumMaterialu: e.target.value})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Želaný štart výroby (nepovinné)</label>
+                  <input type="date" value={novaEtapa.zelanyStartVyroby || ''}
+                    onChange={(e) => setNovaEtapa({...novaEtapa, zelanyStartVyroby: e.target.value})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+                  <p className="text-xs text-gray-400 mt-1">Prázdne = začne v deň, keď bude materiál</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Človekodiny na výrobu</label>
                   <input type="number" step="1" placeholder="napr. 400"
                     value={novaEtapa.clovekohod || ''}
                     onChange={(e) => setNovaEtapa({...novaEtapa, clovekohod: e.target.value})}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Počet ľudí</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Počet ľudí na výrobe</label>
                   <input type="number" step="1" min="1" placeholder="napr. 4"
                     value={novaEtapa.pocetLudi || ''}
                     onChange={(e) => setNovaEtapa({...novaEtapa, pocetLudi: e.target.value})}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
                 </div>
               </div>
-
-              {/* Výsledok výpočtu */}
-              {datumKonca && (
-                <div className={`mt-4 rounded-lg p-4 flex items-center gap-4 ${
-                  stavSemafora === 'ok' ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
-                }`}>
-                  <div className={`w-4 h-4 rounded-full flex-shrink-0 ${
-                    stavSemafora === 'ok' ? 'bg-green-500' : 'bg-red-500'
-                  }`} />
-                  <div>
-                    <p className="text-sm font-medium text-gray-800">
-                      Reálny dátum dokončenia: <strong>{new Date(datumKonca).toLocaleDateString('sk-SK')}</strong>
-                      {' '}({Math.ceil(parseFloat(novaEtapa.clovekohod) / (parseInt(novaEtapa.pocetLudi) * 8))} dní)
-                    </p>
-                    {stavSemafora === 'ok'
-                      ? <p className="text-xs text-green-700 mt-0.5">Stihnete deadline ✓</p>
-                      : <p className="text-xs text-red-700 mt-0.5">Nestihnete deadline — zvýšte počet ľudí alebo posuňte deadline</p>
-                    }
-                  </div>
-                </div>
-              )}
             </div>
 
-            {/* DÁTUMY */}
+            {/* POVRCHOVÁ ÚPRAVA */}
             <div className="border-b pb-4">
-              <h3 className="text-lg font-semibold text-gray-700 mb-4">Podrobné termíny</h3>
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Dátum ukončenia</label>
-                  <input type="date" value={novaEtapa.datumUkoncenia}
-                    onChange={(e) => setNovaEtapa({...novaEtapa, datumUkoncenia: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
-                </div>
-                <div></div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Výroba od</label>
-                  <input type="date" value={novaEtapa.datumVyrobyOd}
-                    onChange={(e) => setNovaEtapa({...novaEtapa, datumVyrobyOd: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Výroba do</label>
-                  <input type="date" value={novaEtapa.datumVyrobyDo}
-                    onChange={(e) => setNovaEtapa({...novaEtapa, datumVyrobyDo: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Povrchová úprava od</label>
-                  <input type="date" value={novaEtapa.datumPovrchovejUpravyOd}
-                    onChange={(e) => setNovaEtapa({...novaEtapa, datumPovrchovejUpravyOd: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Povrchová úprava do</label>
-                  <input type="date" value={novaEtapa.datumPovrchovejUpravyDo}
-                    onChange={(e) => setNovaEtapa({...novaEtapa, datumPovrchovejUpravyDo: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Montáž od</label>
-                  <input type="date" value={novaEtapa.datumMontazeOd}
-                    onChange={(e) => setNovaEtapa({...novaEtapa, datumMontazeOd: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Montáž do</label>
-                  <input type="date" value={novaEtapa.datumMontazeDo}
-                    onChange={(e) => setNovaEtapa({...novaEtapa, datumMontazeDo: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
-                </div>
-              </div>
-            </div>
-
-            {/* ÚPRAVY */}
-            <div className="border-b pb-4">
-              <h3 className="text-lg font-semibold text-gray-700 mb-4">Povrchové úpravy</h3>
-              <div className="grid md:grid-cols-2 gap-4">
+              <h3 className="text-lg font-semibold text-gray-700 mb-4">Povrchová úprava</h3>
+              <div className="grid md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Zinkovanie</label>
                   <select value={novaEtapa.zinkovanie}
-                    onChange={(e) => setNovaEtapa({...novaEtapa, zinkovanie: e.target.value})}
+                    onChange={(e) => setNovaEtapa({
+                      ...novaEtapa,
+                      zinkovanie: e.target.value,
+                      zinkovanieDni: ZINKOVANIE_DNI[e.target.value] ?? 0
+                    })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg">
-                    <option value="nic">Žiadne</option>
-                    <option value="ponorove">Ponorové</option>
-                    <option value="galvanicke">Galvanické</option>
+                    <option value="nic">Bez zinku</option>
+                    <option value="ponorove">Žiarové zinkovanie</option>
+                    <option value="galvanicke">Galvanické zinkovanie</option>
                   </select>
+                  <input type="number" step="1" min="0"
+                    value={novaEtapa.zinkovanieDni ?? ZINKOVANIE_DNI[novaEtapa.zinkovanie] ?? 0}
+                    onChange={(e) => setNovaEtapa({...novaEtapa, zinkovanieDni: e.target.value})}
+                    className="w-full mt-2 px-3 py-1.5 border border-gray-300 rounded-lg text-sm"
+                    placeholder="dní" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Farba</label>
                   <select value={novaEtapa.farba}
-                    onChange={(e) => setNovaEtapa({...novaEtapa, farba: e.target.value})}
+                    onChange={(e) => setNovaEtapa({
+                      ...novaEtapa,
+                      farba: e.target.value,
+                      farbaDni: FARBA_DNI[e.target.value] ?? 0
+                    })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg">
-                    <option value="nic">Žiadna</option>
-                    <option value="praskovaMat">Prášková mat</option>
-                    <option value="praskovaLes">Prášková lesk</option>
+                    <option value="nic">Bez farby</option>
+                    <option value="praskova">Prášková farba</option>
+                    <option value="mokra">Mokrá farba</option>
+                    <option value="protipoziar">Protipožiarny náter</option>
                   </select>
+                  <input type="number" step="1" min="0"
+                    value={novaEtapa.farbaDni ?? FARBA_DNI[novaEtapa.farba] ?? 0}
+                    onChange={(e) => setNovaEtapa({...novaEtapa, farbaDni: e.target.value})}
+                    className="w-full mt-2 px-3 py-1.5 border border-gray-300 rounded-lg text-sm"
+                    placeholder="dní" />
+                  <input type="text" value={novaEtapa.farbaTon || ''}
+                    onChange={(e) => setNovaEtapa({...novaEtapa, farbaTon: e.target.value})}
+                    className="w-full mt-2 px-3 py-1.5 border border-gray-300 rounded-lg text-sm"
+                    placeholder="Odtieň, napr. RAL 9005" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Odtieň farby (RAL)</label>
-                  <input type="text" value={novaEtapa.farbaTon}
-                    onChange={(e) => setNovaEtapa({...novaEtapa, farbaTon: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                    placeholder="napr. RAL 9005" />
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                    <input type="checkbox" checked={!!novaEtapa.pieskovanie}
+                      onChange={(e) => setNovaEtapa({
+                        ...novaEtapa,
+                        pieskovanie: e.target.checked,
+                        pieskovanieDni: e.target.checked ? (novaEtapa.pieskovanieDni ?? PIESKOVANIE_DNI_DEFAULT) : novaEtapa.pieskovanieDni
+                      })}
+                    />
+                    Pieskovanie (bonus)
+                  </label>
+                  {novaEtapa.pieskovanie && (
+                    <input type="number" step="1" min="0"
+                      value={novaEtapa.pieskovanieDni ?? PIESKOVANIE_DNI_DEFAULT}
+                      onChange={(e) => setNovaEtapa({...novaEtapa, pieskovanieDni: e.target.value})}
+                      className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm"
+                      placeholder="dní" />
+                  )}
                 </div>
               </div>
             </div>
+
+            {/* MONTÁŽ */}
+            <div className="border-b pb-4">
+              <h3 className="text-lg font-semibold text-gray-700 mb-4">Montáž</h3>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Počet dní na montáž</label>
+                  <input type="number" step="1" min="0" placeholder="napr. 5"
+                    value={novaEtapa.montazDni || ''}
+                    onChange={(e) => setNovaEtapa({...novaEtapa, montazDni: e.target.value})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+                </div>
+              </div>
+            </div>
+
+            {/* VÝSLEDOK VÝPOČTU */}
+            {plan.startVyroby && (
+              <div className={`rounded-lg p-4 border ${
+                plan.rezervaDni === null ? 'bg-gray-50 border-gray-200'
+                  : plan.rezervaDni >= 0 ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
+              }`}>
+                {plan.posunuteMaterialom && (
+                  <p className="text-xs text-orange-600 mb-2">⚠ Štart posunutý — materiál bude neskôr, než bol želaný štart</p>
+                )}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">Štart výroby</p>
+                    <p className="font-medium text-gray-800">{formatDatum(plan.startVyroby)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">Koniec výroby ({plan.trvanieVyroby} dní)</p>
+                    <p className="font-medium text-gray-800">{formatDatum(plan.koniecVyroby)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">Koniec povrchu ({plan.povrchDni} dní)</p>
+                    <p className="font-medium text-gray-800">{formatDatum(plan.koniecPovrchu)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">Koniec montáže</p>
+                    <p className="font-medium text-gray-800">{formatDatum(plan.koniecMontaze)}</p>
+                  </div>
+                </div>
+                {plan.rezervaDni !== null && (
+                  <p className={`text-sm font-medium mt-3 ${plan.rezervaDni >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                    {plan.rezervaDni >= 0
+                      ? `Rezerva ${plan.rezervaDni} pracovných dní oproti termínu ✓`
+                      : `Meškanie ${Math.abs(plan.rezervaDni)} pracovných dní oproti termínu`}
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* POPIS */}
             <div>

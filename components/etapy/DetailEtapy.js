@@ -4,6 +4,12 @@ import { ArrowLeft, Pencil, Plus, Trash2, Upload, X, Scissors, LayoutList, Edit,
 import ImportModal from '../import/ImportModal';
 import RozdelitEtapuModal from '../casti/RozdelitEtapuModal';
 import PrehladCasti from '../casti/PrehladCasti';
+import { vypocitajVyrobnyPlan, ZINKOVANIE_DNI, FARBA_DNI, PIESKOVANIE_DNI_DEFAULT } from '../../lib/planovanie/vyrobnyPlan';
+
+function formatDatum(datumStr) {
+  if (!datumStr) return '—';
+  return new Date(datumStr).toLocaleDateString('sk-SK');
+}
 
 export default function DetailEtapy({
   aktualnaZakazka,
@@ -141,30 +147,44 @@ export default function DetailEtapy({
                 </div>
               </div>
 
-              {/* TIMELINE */}
+              {/* TERMÍN OD ZÁKAZNÍKA */}
               <div className="border-b pb-4">
-                <h3 className="text-sm font-semibold text-gray-500 uppercase mb-3">Timeline</h3>
+                <h3 className="text-sm font-semibold text-gray-500 uppercase mb-3">Termín od zákazníka</h3>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Dátum začiatku</label>
-                    <input type="date" value={editovanaEtapa.datumZaciatku || ''}
-                      onChange={(e) => setEditovanaEtapa({...editovanaEtapa, datumZaciatku: e.target.value})}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Deadline (požadovaný dátum)</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Zmluvný termín odovzdania</label>
                     <input type="date" value={editovanaEtapa.deadline || ''}
                       onChange={(e) => setEditovanaEtapa({...editovanaEtapa, deadline: e.target.value})}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
                   </div>
+                </div>
+              </div>
+
+              {/* MATERIÁL A VÝROBA */}
+              <div className="border-b pb-4">
+                <h3 className="text-sm font-semibold text-gray-500 uppercase mb-3">Materiál a výroba</h3>
+                <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Človekodiny celkom</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Dátum materiálu (kedy bude k dispozícii)</label>
+                    <input type="date" value={editovanaEtapa.datumMaterialu || ''}
+                      onChange={(e) => setEditovanaEtapa({...editovanaEtapa, datumMaterialu: e.target.value})}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Želaný štart výroby (nepovinné)</label>
+                    <input type="date" value={editovanaEtapa.zelanyStartVyroby || ''}
+                      onChange={(e) => setEditovanaEtapa({...editovanaEtapa, zelanyStartVyroby: e.target.value})}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+                    <p className="text-xs text-gray-400 mt-1">Prázdne = začne v deň, keď bude materiál</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Človekodiny na výrobu</label>
                     <input type="number" step="1" value={editovanaEtapa.clovekohod || ''}
                       onChange={(e) => setEditovanaEtapa({...editovanaEtapa, clovekohod: e.target.value})}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Počet ľudí</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Počet ľudí na výrobe</label>
                     <input type="number" step="1" min="1" value={editovanaEtapa.pocetLudi || ''}
                       onChange={(e) => setEditovanaEtapa({...editovanaEtapa, pocetLudi: e.target.value})}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
@@ -172,89 +192,128 @@ export default function DetailEtapy({
                 </div>
               </div>
 
-              {/* PODROBNÉ TERMÍNY */}
+              {/* POVRCHOVÁ ÚPRAVA */}
               <div className="border-b pb-4">
-                <h3 className="text-sm font-semibold text-gray-500 uppercase mb-3">Podrobné termíny</h3>
+                <h3 className="text-sm font-semibold text-gray-500 uppercase mb-3">Povrchová úprava</h3>
+                <div className="grid md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Zinkovanie</label>
+                    <select value={editovanaEtapa.zinkovanie}
+                      onChange={(e) => setEditovanaEtapa({
+                        ...editovanaEtapa,
+                        zinkovanie: e.target.value,
+                        zinkovanieDni: ZINKOVANIE_DNI[e.target.value] ?? 0
+                      })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                      <option value="nic">Bez zinku</option>
+                      <option value="ponorove">Žiarové zinkovanie</option>
+                      <option value="galvanicke">Galvanické zinkovanie</option>
+                    </select>
+                    <input type="number" step="1" min="0"
+                      value={editovanaEtapa.zinkovanieDni ?? ZINKOVANIE_DNI[editovanaEtapa.zinkovanie] ?? 0}
+                      onChange={(e) => setEditovanaEtapa({...editovanaEtapa, zinkovanieDni: e.target.value})}
+                      className="w-full mt-2 px-3 py-1.5 border border-gray-300 rounded-lg text-sm"
+                      placeholder="dní" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Farba</label>
+                    <select value={editovanaEtapa.farba}
+                      onChange={(e) => setEditovanaEtapa({
+                        ...editovanaEtapa,
+                        farba: e.target.value,
+                        farbaDni: FARBA_DNI[e.target.value] ?? 0
+                      })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                      <option value="nic">Bez farby</option>
+                      <option value="praskova">Prášková farba</option>
+                      <option value="mokra">Mokrá farba</option>
+                      <option value="protipoziar">Protipožiarny náter</option>
+                    </select>
+                    <input type="number" step="1" min="0"
+                      value={editovanaEtapa.farbaDni ?? FARBA_DNI[editovanaEtapa.farba] ?? 0}
+                      onChange={(e) => setEditovanaEtapa({...editovanaEtapa, farbaDni: e.target.value})}
+                      className="w-full mt-2 px-3 py-1.5 border border-gray-300 rounded-lg text-sm"
+                      placeholder="dní" />
+                    <input type="text" value={editovanaEtapa.farbaTon || ''}
+                      onChange={(e) => setEditovanaEtapa({...editovanaEtapa, farbaTon: e.target.value})}
+                      className="w-full mt-2 px-3 py-1.5 border border-gray-300 rounded-lg text-sm"
+                      placeholder="Odtieň, napr. RAL 9005" />
+                  </div>
+                  <div>
+                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                      <input type="checkbox" checked={!!editovanaEtapa.pieskovanie}
+                        onChange={(e) => setEditovanaEtapa({
+                          ...editovanaEtapa,
+                          pieskovanie: e.target.checked,
+                          pieskovanieDni: e.target.checked ? (editovanaEtapa.pieskovanieDni ?? PIESKOVANIE_DNI_DEFAULT) : editovanaEtapa.pieskovanieDni
+                        })}
+                      />
+                      Pieskovanie (bonus)
+                    </label>
+                    {editovanaEtapa.pieskovanie && (
+                      <input type="number" step="1" min="0"
+                        value={editovanaEtapa.pieskovanieDni ?? PIESKOVANIE_DNI_DEFAULT}
+                        onChange={(e) => setEditovanaEtapa({...editovanaEtapa, pieskovanieDni: e.target.value})}
+                        className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm"
+                        placeholder="dní" />
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* MONTÁŽ */}
+              <div className="border-b pb-4">
+                <h3 className="text-sm font-semibold text-gray-500 uppercase mb-3">Montáž</h3>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Dátum ukončenia</label>
-                    <input type="date" value={editovanaEtapa.datumUkoncenia || ''}
-                      onChange={(e) => setEditovanaEtapa({...editovanaEtapa, datumUkoncenia: e.target.value})}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
-                  </div>
-                  <div></div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Výroba od</label>
-                    <input type="date" value={editovanaEtapa.datumVyrobyOd || ''}
-                      onChange={(e) => setEditovanaEtapa({...editovanaEtapa, datumVyrobyOd: e.target.value})}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Výroba do</label>
-                    <input type="date" value={editovanaEtapa.datumVyrobyDo || ''}
-                      onChange={(e) => setEditovanaEtapa({...editovanaEtapa, datumVyrobyDo: e.target.value})}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Povrchová úprava od</label>
-                    <input type="date" value={editovanaEtapa.datumPovrchovejUpravyOd || ''}
-                      onChange={(e) => setEditovanaEtapa({...editovanaEtapa, datumPovrchovejUpravyOd: e.target.value})}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Povrchová úprava do</label>
-                    <input type="date" value={editovanaEtapa.datumPovrchovejUpravyDo || ''}
-                      onChange={(e) => setEditovanaEtapa({...editovanaEtapa, datumPovrchovejUpravyDo: e.target.value})}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Montáž od</label>
-                    <input type="date" value={editovanaEtapa.datumMontazeOd || ''}
-                      onChange={(e) => setEditovanaEtapa({...editovanaEtapa, datumMontazeOd: e.target.value})}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Montáž do</label>
-                    <input type="date" value={editovanaEtapa.datumMontazeDo || ''}
-                      onChange={(e) => setEditovanaEtapa({...editovanaEtapa, datumMontazeDo: e.target.value})}
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Počet dní na montáž</label>
+                    <input type="number" step="1" min="0" value={editovanaEtapa.montazDni || ''}
+                      onChange={(e) => setEditovanaEtapa({...editovanaEtapa, montazDni: e.target.value})}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
                   </div>
                 </div>
               </div>
 
-              {/* POVRCHOVÉ ÚPRAVY */}
-              <div className="border-b pb-4">
-                <h3 className="text-sm font-semibold text-gray-500 uppercase mb-3">Povrchové úpravy</h3>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Zinkovanie</label>
-                    <select value={editovanaEtapa.zinkovanie}
-                      onChange={(e) => setEditovanaEtapa({...editovanaEtapa, zinkovanie: e.target.value})}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg">
-                      <option value="nic">Žiadne</option>
-                      <option value="ponorove">Ponorové</option>
-                      <option value="galvanicke">Galvanické</option>
-                    </select>
+              {/* VÝSLEDOK VÝPOČTU */}
+              {(() => {
+                const plan = vypocitajVyrobnyPlan(editovanaEtapa);
+                if (!plan.startVyroby) return null;
+                return (
+                  <div className={`rounded-lg p-4 border ${
+                    plan.rezervaDni === null ? 'bg-gray-50 border-gray-200'
+                      : plan.rezervaDni >= 0 ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
+                  }`}>
+                    {plan.posunuteMaterialom && (
+                      <p className="text-xs text-orange-600 mb-2">⚠ Štart posunutý — materiál bude neskôr, než bol želaný štart</p>
+                    )}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                      <div>
+                        <p className="text-xs text-gray-500 mb-1">Štart výroby</p>
+                        <p className="font-medium text-gray-800">{formatDatum(plan.startVyroby)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 mb-1">Koniec výroby ({plan.trvanieVyroby} dní)</p>
+                        <p className="font-medium text-gray-800">{formatDatum(plan.koniecVyroby)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 mb-1">Koniec povrchu ({plan.povrchDni} dní)</p>
+                        <p className="font-medium text-gray-800">{formatDatum(plan.koniecPovrchu)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 mb-1">Koniec montáže</p>
+                        <p className="font-medium text-gray-800">{formatDatum(plan.koniecMontaze)}</p>
+                      </div>
+                    </div>
+                    {plan.rezervaDni !== null && (
+                      <p className={`text-sm font-medium mt-3 ${plan.rezervaDni >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                        {plan.rezervaDni >= 0
+                          ? `Rezerva ${plan.rezervaDni} pracovných dní oproti termínu ✓`
+                          : `Meškanie ${Math.abs(plan.rezervaDni)} pracovných dní oproti termínu`}
+                      </p>
+                    )}
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Farba</label>
-                    <select value={editovanaEtapa.farba}
-                      onChange={(e) => setEditovanaEtapa({...editovanaEtapa, farba: e.target.value})}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg">
-                      <option value="nic">Žiadna</option>
-                      <option value="praskovaMat">Prášková mat</option>
-                      <option value="praskovaLes">Prášková lesk</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Odtieň farby (RAL)</label>
-                    <input type="text" value={editovanaEtapa.farbaTon || ''}
-                      onChange={(e) => setEditovanaEtapa({...editovanaEtapa, farbaTon: e.target.value})}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                      placeholder="napr. RAL 9005" />
-                  </div>
-                </div>
-              </div>
+                );
+              })()}
 
               {/* POPIS + STAV */}
               <div>
@@ -326,13 +385,24 @@ export default function DetailEtapy({
               {aktualnaEtapa.zinkovanie && aktualnaEtapa.zinkovanie !== 'nic' && (
                 <div>
                   <span className="text-gray-600">Zinkovanie:</span>
-                  <span className="ml-2 font-medium">{aktualnaEtapa.zinkovanie}</span>
+                  <span className="ml-2 font-medium">
+                    {aktualnaEtapa.zinkovanie === 'ponorove' ? 'Žiarové zinkovanie' : 'Galvanické zinkovanie'}
+                  </span>
                 </div>
               )}
               {aktualnaEtapa.farba && aktualnaEtapa.farba !== 'nic' && (
                 <div>
                   <span className="text-gray-600">Farba:</span>
-                  <span className="ml-2 font-medium">{aktualnaEtapa.farba}{aktualnaEtapa.farbaTon ? ` (${aktualnaEtapa.farbaTon})` : ''}</span>
+                  <span className="ml-2 font-medium">
+                    {{ praskova: 'Prášková farba', mokra: 'Mokrá farba', protipoziar: 'Protipožiarny náter' }[aktualnaEtapa.farba] || aktualnaEtapa.farba}
+                    {aktualnaEtapa.farbaTon ? ` (${aktualnaEtapa.farbaTon})` : ''}
+                  </span>
+                </div>
+              )}
+              {aktualnaEtapa.pieskovanie && (
+                <div>
+                  <span className="text-gray-600">Pieskovanie:</span>
+                  <span className="ml-2 font-medium">áno</span>
                 </div>
               )}
               {aktualnaEtapa.popis && (
@@ -343,6 +413,55 @@ export default function DetailEtapy({
               )}
             </div>
           )}
+
+          {/* VÝROBNÝ PLÁN (súhrn) */}
+          {!editujemEtapu && (() => {
+            const plan = vypocitajVyrobnyPlan(aktualnaEtapa);
+            if (!plan.startVyroby) return null;
+            return (
+              <div className="mt-4 pt-4 border-t rounded-lg">
+                <h3 className="text-sm font-semibold text-gray-500 uppercase mb-3">Výrobný plán</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm mb-2">
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">Materiál</p>
+                    <p className="font-medium text-gray-800">{formatDatum(aktualnaEtapa.datumMaterialu)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">Štart výroby</p>
+                    <p className="font-medium text-gray-800">{formatDatum(plan.startVyroby)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">Koniec výroby ({plan.trvanieVyroby} dní)</p>
+                    <p className="font-medium text-gray-800">{formatDatum(plan.koniecVyroby)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">Koniec povrchu ({plan.povrchDni} dní)</p>
+                    <p className="font-medium text-gray-800">{formatDatum(plan.koniecPovrchu)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">Koniec montáže</p>
+                    <p className="font-medium text-gray-800">{formatDatum(plan.koniecMontaze)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">Termín od zákazníka</p>
+                    <p className="font-medium text-gray-800">{formatDatum(aktualnaEtapa.deadline)}</p>
+                  </div>
+                </div>
+                {plan.posunuteMaterialom && (
+                  <p className="text-xs text-orange-600 mb-1">⚠ Štart posunutý — materiál bol dostupný neskôr, než bol želaný štart</p>
+                )}
+                {plan.rezervaDni !== null && (
+                  <p className={`text-sm font-medium px-3 py-2 rounded-lg inline-block ${
+                    plan.rezervaDni >= 0 ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+                  }`}>
+                    {plan.rezervaDni >= 0
+                      ? `Rezerva ${plan.rezervaDni} pracovných dní ✓`
+                      : `Meškanie ${Math.abs(plan.rezervaDni)} pracovných dní`}
+                  </p>
+                )}
+              </div>
+            );
+          })()}
         </div>
 
         {/* TIMELINE BLOK */}

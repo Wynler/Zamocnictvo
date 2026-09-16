@@ -210,6 +210,28 @@ npm run dev
 # Otvor http://localhost:3000
 ```
 
+## 🗄️ Migrácie databázy
+
+### Výrobný plán projektu (materiál → výroba → povrchová úprava → montáž)
+
+Ak už máš appku nasadenú a databázu založenú podľa kroku vyššie, spusti v Supabase
+SQL Editore navyše tento skript (aditívny, nič nemaže):
+
+```sql
+ALTER TABLE etapy
+  ADD COLUMN IF NOT EXISTS datum_materialu DATE,
+  ADD COLUMN IF NOT EXISTS montaz_dni INTEGER,
+  ADD COLUMN IF NOT EXISTS zinkovanie_dni NUMERIC,
+  ADD COLUMN IF NOT EXISTS farba_dni NUMERIC,
+  ADD COLUMN IF NOT EXISTS pieskovanie BOOLEAN DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS pieskovanie_dni NUMERIC;
+```
+
+**Pozor:** hodnoty poľa `farba` sa odteraz volajú `praskova` / `mokra` / `protipoziar`
+(namiesto pôvodných `praskovaMat` / `praskovaLes`). Pri existujúcich projektoch, kde
+bola farba už vyplnená pôvodnými hodnotami, sa po tejto zmene zobrazí ako nevyplnená —
+treba ju v projekte znova nastaviť.
+
 ## 🔧 Ďalšie možnosti
 
 ### Pridanie autentifikácie
