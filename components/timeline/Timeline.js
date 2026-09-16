@@ -256,7 +256,7 @@ export default function Timeline({ onSpat }) {
 
                   const vyrobaSeg = (!r.blokovane && r.start && r.koniec) ? pracovneSegmenty(r.start, r.koniec) : [];
                   const povrchOd = (!r.blokovane && r.koniec) ? r.koniec : null;
-                  const povrchDo = (povrchOd && r.etapaPovrchDni > 0) ? pridajPracovneDni(povrchOd, r.etapaPovrchDni) : null;
+                  const povrchDo = (povrchOd && r.etapaPovrchDni > 0) ? pridajPracovneDni(povrchOd, r.etapaPovrchDni - 1) : null;
                   const povrchSeg = (povrchOd && povrchDo) ? pracovneSegmenty(povrchOd, povrchDo) : [];
 
                   return (
