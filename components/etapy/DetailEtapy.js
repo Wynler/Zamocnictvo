@@ -29,15 +29,11 @@ export default function DetailEtapy({
   onZacatEditovatDielec,
   onUlozitDielec,
   onZrusitEditaciuDielca,
-  onImportExcel,
   vypocitajPracovneDni,
   generateKalendar,
   nacitajData,
   onDetailCasti
 }) {
-  const dniVyroba = vypocitajPracovneDni(aktualnaEtapa.datumVyrobyOd, aktualnaEtapa.datumVyrobyDo);
-  const dniPovrch = vypocitajPracovneDni(aktualnaEtapa.datumPovrchovejUpravyOd, aktualnaEtapa.datumPovrchovejUpravyDo);
-  const dniMontaz = vypocitajPracovneDni(aktualnaEtapa.datumMontazeOd, aktualnaEtapa.datumMontazeDo);
   const kalendar = generateKalendar(aktualnaEtapa);
   const [showImport, setShowImport] = useState(false);
   const [showRozdelit, setShowRozdelit] = useState(false);

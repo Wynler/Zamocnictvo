@@ -28,6 +28,7 @@ Kompletná aplikácia na správu zámočníckych zákaziek s databázou.
 CREATE TABLE zakazky (
   id BIGSERIAL PRIMARY KEY,
   nazov TEXT NOT NULL,
+  cislo_zakazky TEXT,
   zakaznik TEXT NOT NULL,
   kontaktna_osoba TEXT,
   telefon TEXT,
@@ -41,7 +42,7 @@ CREATE TABLE zakazky (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Vytvorenie tabuľky pre etapy
+-- Vytvorenie tabuľky pre projekty (etapy)
 CREATE TABLE etapy (
   id BIGSERIAL PRIMARY KEY,
   zakazka_id BIGINT REFERENCES zakazky(id) ON DELETE CASCADE,
@@ -62,6 +63,11 @@ CREATE TABLE etapy (
   farba_ton TEXT,
   popis TEXT,
   stav TEXT DEFAULT 'planovane',
+  -- Timeline polia
+  datum_zaciatku DATE,
+  deadline DATE,
+  clovekohod NUMERIC,
+  pocet_ludi INTEGER,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -70,10 +76,55 @@ CREATE TABLE etapy (
 CREATE TABLE dielce (
   id BIGSERIAL PRIMARY KEY,
   etapa_id BIGINT REFERENCES etapy(id) ON DELETE CASCADE,
+  cislo_dielca TEXT,
   nazov TEXT NOT NULL,
+  profil TEXT,
+  material TEXT,
+  celkova_plocha NUMERIC,
   hmotnost_jedneho_ks NUMERIC,
+  hmotnost_celkova NUMERIC,
   mnozstvo NUMERIC NOT NULL,
   jednotka TEXT DEFAULT 'ks',
+  poznamka TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Vytvorenie tabuľky pre časti projektu (rozdelenie na výrobné dávky)
+CREATE TABLE casti_etapy (
+  id BIGSERIAL PRIMARY KEY,
+  etapa_id BIGINT REFERENCES etapy(id) ON DELETE CASCADE,
+  nazov TEXT NOT NULL,
+  poradie INTEGER,
+  posledna_aktualizacia TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Väzba dielec ↔ časť (M:N) s priebehom výroby
+CREATE TABLE dielce_casti (
+  id BIGSERIAL PRIMARY KEY,
+  cast_id BIGINT REFERENCES casti_etapy(id) ON DELETE CASCADE,
+  dielec_id BIGINT REFERENCES dielce(id) ON DELETE CASCADE,
+  mnozstvo NUMERIC NOT NULL,
+  poskladane BOOLEAN DEFAULT FALSE,
+  zvarene BOOLEAN DEFAULT FALSE,
+  povrchova_uprava BOOLEAN DEFAULT FALSE,
+  vyvezene BOOLEAN DEFAULT FALSE,
+  namontovane BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Materiálový kusovník na dielec
+CREATE TABLE polozky_kusovnika (
+  id BIGSERIAL PRIMARY KEY,
+  dielec_id BIGINT REFERENCES dielce(id) ON DELETE CASCADE,
+  polozka TEXT,
+  pocet NUMERIC,
+  profil TEXT,
+  norma TEXT,
+  material TEXT,
+  dlzka_mm NUMERIC,
+  hmotnost_1ks NUMERIC,
+  hmotnost_celkova NUMERIC,
   poznamka TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -82,11 +133,17 @@ CREATE TABLE dielce (
 ALTER TABLE zakazky ENABLE ROW LEVEL SECURITY;
 ALTER TABLE etapy ENABLE ROW LEVEL SECURITY;
 ALTER TABLE dielce ENABLE ROW LEVEL SECURITY;
+ALTER TABLE casti_etapy ENABLE ROW LEVEL SECURITY;
+ALTER TABLE dielce_casti ENABLE ROW LEVEL SECURITY;
+ALTER TABLE polozky_kusovnika ENABLE ROW LEVEL SECURITY;
 
 -- Vytvorenie politík (zatiaľ povoliť všetko - neskôr môžeš pridať autentifikáciu)
 CREATE POLICY "Povoliť všetko pre zákazky" ON zakazky FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Povoliť všetko pre etapy" ON etapy FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Povoliť všetko pre dielce" ON dielce FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Povoliť všetko pre casti_etapy" ON casti_etapy FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Povoliť všetko pre dielce_casti" ON dielce_casti FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Povoliť všetko pre polozky_kusovnika" ON polozky_kusovnika FOR ALL USING (true) WITH CHECK (true);
 ```
 
    - Klikni "RUN" (alebo F5)

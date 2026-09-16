@@ -218,46 +218,6 @@ export default function ZamocnickaSprava() {
     }
   };
 
-  const handleImportExcel = async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    try {
-      setImportStatus('Načítavam Excel súbor...');
-      setShowImportStatus(true);
-
-      const data = await file.arrayBuffer();
-      const XLSX = await import('xlsx');
-      const workbook = XLSX.read(data, { type: 'array' });
-      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-      const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: '' });
-
-      let importedCount = 0;
-      for (let i = 1; i < jsonData.length; i++) {
-        const row = jsonData[i];
-        if (!row[0]) continue;
-        const dielec = {
-          nazov: String(row[0] || ''),
-          hmotnostJednehoKs: row[1] ? parseFloat(row[1]) : null,
-          mnozstvo: parseFloat(row[2] || 0),
-          jednotka: String(row[3] || 'm'),
-          poznamka: String(row[4] || '')
-        };
-        await pridajDielec(aktualnaEtapa.id, dielec);
-        importedCount++;
-      }
-
-      setImportStatus(`✓ Importované ${importedCount} dielcov`);
-      await syncAktualneStavy();
-      setTimeout(() => setShowImportStatus(false), 3000);
-    } catch (error) {
-      setImportStatus('❌ Chyba pri importe: ' + error.message);
-      setTimeout(() => setShowImportStatus(false), 5000);
-    }
-
-    event.target.value = '';
-  };
-
   // HELPER FUNCTIONS
   const vypocitajPracovneDni = (datumOd, datumDo) => {
     if (!datumOd || !datumDo) return null;
@@ -424,7 +384,6 @@ export default function ZamocnickaSprava() {
           setEditujemDielec(false);
           setEditovanyDielec(null);
         }}
-        onImportExcel={handleImportExcel}
         vypocitajPracovneDni={vypocitajPracovneDni}
         generateKalendar={generateKalendar}
         nacitajData={syncAktualneStavy}
