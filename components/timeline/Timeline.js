@@ -327,7 +327,8 @@ export default function Timeline({ onSpat }) {
                                 width: `${Math.max(0.5, Math.min(100, segKoniecP) - Math.max(0, segStartP))}%`,
                                 top: '50%', transform: 'translateY(-50%)',
                                 height: BAR_H, borderRadius: 3,
-                                background: '#7C3AED'
+                                background: '#7C3AED',
+                                opacity: 0.6
                               }}
                             />
                           );
