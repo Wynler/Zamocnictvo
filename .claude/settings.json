@@ -10,5 +10,18 @@
       "mcp__Supabase__list_projects",
       "mcp__Supabase__search_docs"
     ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "mcp__Supabase__execute_sql",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/check-sql-readonly.sh"
+          }
+        ]
+      }
+    ]
   }
 }
